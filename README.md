@@ -1,4 +1,11 @@
-# Group Project
+# Group Project for Team 42
+
+Project Members:
+- Jovan Lee Hong Xi (2200913)
+- Loo Zong Poh (2203525)
+- Ser Quao Zao (2201364)
+- Ryan Ong Zhi Yong (2201186)
+
 Rasberry Pico
 
 Thing to do:
