@@ -1,9 +1,3 @@
-/**
- * Copyright (c) 2022 Raspberry Pi (Trading) Ltd.
- *
- * SPDX-License-Identifier: BSD-3-Clause
- */
-
 #include <string.h>
 #include <stdlib.h>
 
@@ -70,11 +64,18 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
             DEBUG_printf("%c", state->buffer_recv[i]);
         }
         printf("\n");
+
+        // Send an acknowledge message to the client
+        const char* ack_msg = "Message received!";
+        tcp_write(tpcb, ack_msg, strlen(ack_msg), 1);
     }
     pbuf_free(p);
 
     // Check if we have received the whole buffer
     if (state->recv_len == BUF_SIZE) {
+        // Clear the buffer
+        memset(state->buffer_recv, 0, BUF_SIZE);
+        state->recv_len = 0;
         // Close the connection
         tcp_server_close(arg);
     }
@@ -87,9 +88,11 @@ static err_t tcp_server_poll(void *arg, struct tcp_pcb *tpcb) {
 }
 
 static void tcp_server_err(void *arg, err_t err) {
-    if (err != ERR_ABRT) {
-        DEBUG_printf("tcp_client_err_fn %d\n", err);
-    }
+    // Enable to debug errors
+
+    // if (err != ERR_ABRT) {
+    //     DEBUG_printf("tcp_client_err_fn %d\n", err);
+    // }
 }
 
 static err_t tcp_server_accept(void *arg, struct tcp_pcb *client_pcb, err_t err) {
