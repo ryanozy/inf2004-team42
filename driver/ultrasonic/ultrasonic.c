@@ -1,66 +1,66 @@
-#include "ultrasonic_sensor.h"
-#include <stdio.h>
-#include "pico/stdlib.h"
-#include "hardware/gpio.h"
-#include "hardware/dma.h"
-#include "hardware/timer.h"
+#include "ultrasonic_sensor.h" // Include the ultrasonic sensor header file
+#include <stdio.h> // Include standard input-output library
+#include "pico/stdlib.h" // Include the Pico standard library
+#include "hardware/gpio.h" // Include the GPIO hardware library
+#include "hardware/timer.h" // Include the timer hardware library
 
-#define TRIGGER_PIN 15
-#define ECHO_PIN 14
+#define TRIGGER_PIN 15 // Define the GPIO pin for the ultrasonic sensor trigger
+#define ECHO_PIN 14 // Define the GPIO pin for the ultrasonic sensor echo
 
-//static const uint32_t MAX_DISTANCE_CM = 400; // Maximum distance in centimeters
-int timeout = 26100;
+volatile uint32_t pulse_start_time = 0; // Variable to store the start time of the echo pulse
+volatile uint32_t pulse_end_time = 0; // Variable to store the end time of the echo pulse
+volatile bool pulse_received = false; // Flag to indicate if an echo pulse has been received
+
+void on_echo_pin_change(uint gpio, uint32_t events) {
+    if (gpio_get(ECHO_PIN)) {
+        pulse_start_time = time_us_32(); // Record the start time of the echo pulse
+    } else {
+        pulse_end_time = time_us_32(); // Record the end time of the echo pulse
+        pulse_received = true; // Set the flag to indicate that the echo pulse has been received
+    }
+}
 
 void ultrasonic_init() {
-    gpio_init(TRIGGER_PIN);
-    gpio_init(ECHO_PIN);
-    gpio_set_dir(TRIGGER_PIN, GPIO_OUT);
-    gpio_set_dir(ECHO_PIN, GPIO_IN);
+    gpio_init(TRIGGER_PIN); // Initialize the trigger pin
+    gpio_init(ECHO_PIN); // Initialize the echo pin
+    gpio_set_dir(TRIGGER_PIN, GPIO_OUT); // Set trigger pin as output
+    gpio_set_dir(ECHO_PIN, GPIO_IN); // Set echo pin as input
+    gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &on_echo_pin_change);
+    // Enable interrupt on both rising and falling edges of the echo pulse
 
-    // Initialize the Pico SDK
+    // Initialize the Pico SDK for standard input-output
     stdio_init_all();
 }
 
-uint64_t getPulse()
-{
-    gpio_put(TRIGGER_PIN, 1);
-    sleep_us(10);
-    gpio_put(TRIGGER_PIN, 0);
+uint32_t getPulseDuration() {
+    pulse_received = false; // Reset the pulse received flag
+    gpio_put(TRIGGER_PIN, true); // Send a trigger pulse
+    sleep_us(10); // Wait for 10 microseconds
+    gpio_put(TRIGGER_PIN, false); // Stop the trigger pulse
 
-    uint64_t width = 0;
-
-    while (gpio_get(ECHO_PIN) == 0) tight_loop_contents();
-    absolute_time_t startTime = get_absolute_time();
-    while (gpio_get(ECHO_PIN) == 1) 
-    {
-        width++;
-        sleep_us(1);
-        if (width > timeout) {
-            printf("width, %lld\n", width);
-            return 0;
-        }
+    // Wait for the echo pulse to be received
+    while (!pulse_received) {
+        tight_loop_contents(); // Wait without consuming CPU cycles
     }
-    absolute_time_t endTime = get_absolute_time();
-    //printf("absolute time difference: %lld\n", absolute_time_diff_us(startTime, endTime));
-    
-    return absolute_time_diff_us(startTime, endTime);
+
+    return pulse_end_time - pulse_start_time; // Return the duration of the echo pulse in microseconds
 }
 
-uint64_t getCm(uint64_t pulseLength)
-{
-    return pulseLength / 29 / 2;
+float calculateDistance(float pulse_duration) {
+    // Speed of sound at sea level is approximately 343 meters per second or 34300 centimeters per second
+    // Distance = (Speed of sound * Pulse duration) / 2
+    return (float)(pulse_duration * 34300) / (2 * 1000000); // Convert microseconds to seconds (10^6) and calculate distance in centimeters
 }
-
 
 int main() {
     ultrasonic_init(); // Initialize ultrasonic sensor
 
     while (1) {
-        uint32_t pulse_duration = getPulse(); // Measure the pulse duration
-        uint32_t distance_cm = getCm(pulse_duration); // Measure distance in centimeters
-        printf("Distance: %d cm\n", distance_cm); // Print the distance
+        float pulse_duration = getPulseDuration(); // Measure the duration of the echo pulse
+        float distance_cm = calculateDistance(pulse_duration); // Calculate distance in centimeters
+        printf("Distance: %.3f cm\n", distance_cm); // Print the distance with three decimal places
         sleep_ms(1000); // Wait for 1 second before measuring again
     }
 
-    return 0;
+    return 0; // Return 0 to indicate successful execution
 }
