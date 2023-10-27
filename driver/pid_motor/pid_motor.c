@@ -4,18 +4,37 @@
 #include "hardware/pwm.h"
 #include "motor.h"
 
+// Encoder Pins
 #define ENCODEROUT_PIN 2
 #define ENCODEROUT_PIN2 3
+
+// Distance between wheel notch in cm
 #define DISTANCE_BETWEEN_NOTCHES_CM 1.0525
+
+// PID Constants
+#define KP 0.1
+#define KI 10
+#define KD 1
+
+double integral_left = 0;
+double prev_error_left = 0;
+double derivative_left = 0;
+
+double integral_right = 0;
+double prev_error_right = 0;
+double derivative_right = 0;
 
 uint32_t time_of_prev_notch[2] = {0, 0};
 __long_double_t distance[2] = {0, 0};
 double speed[2] = {0, 0};
 __long_double_t prev_distance[2] = {0, 0};
 
+int desired_speed_cm_s = 36;
+
 void calculate_speed(uint32_t time_of_notch, int encoder_number);
 void gpio_callback(uint gpio, uint32_t events);
 bool check_wheel_moving(struct repeating_timer *t);
+bool pid(struct repeating_timer *t);
 
 void calculate_speed(uint32_t time_of_notch, int encoder_number)
 {
@@ -49,6 +68,11 @@ void gpio_callback(uint gpio, uint32_t events)
     }
 }
 
+/*
+Repeated timer callback function
+Called every 50ms to check if wheel is moving
+Set speed to 0 if wheel is not moving
+*/
 bool check_wheel_moving(struct repeating_timer *t)
 {
     // Check if distance not changed
@@ -64,6 +88,30 @@ bool check_wheel_moving(struct repeating_timer *t)
 
     prev_distance[0] = distance[0];
     prev_distance[1] = distance[1];
+
+    return true;
+}
+
+/*
+
+*/
+bool pid(struct repeating_timer *t)
+{
+    double error_left = desired_speed_cm_s - speed[0];
+    integral_left += error_left;
+    derivative_left = error_left - prev_error_left;
+    prev_error_left = error_left;
+
+    double error_right = desired_speed_cm_s - speed[1];
+    integral_right += error_right;
+    derivative_right = error_right - prev_error_right;
+    prev_error_right = error_right;
+
+    double left_motor_speed = KP * error_left + KI * integral_left + KD * derivative_left;
+    double right_motor_speed = KP * error_right + KI * integral_right + KD * derivative_right;
+
+    pwm_set_gpio_level(1, left_motor_speed);
+    pwm_set_gpio_level(0, right_motor_speed);
 
     return true;
 }
@@ -91,8 +139,11 @@ int main()
     gpio_set_irq_enabled_with_callback(ENCODEROUT_PIN2, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
 
     // add repeating timer to check if wheel is moving
-    struct repeating_timer timer;
-    add_repeating_timer_ms(-50, &check_wheel_moving, NULL, &timer);
+    struct repeating_timer speedtimer;
+    add_repeating_timer_ms(-50, &check_wheel_moving, NULL, &speedtimer);
+
+    struct repeating_timer pidtimer;
+    add_repeating_timer_ms(-50, &pid, NULL, &pidtimer);
 
     while (true)
     {
