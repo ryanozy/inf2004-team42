@@ -7,6 +7,6 @@
 void ultrasonic_init();
 
 // Function to measure distance in centimeters
-uint32_t ultrasonic_measure_distance_cm();
+float calculateDistance(float pulse_duration);
 
 #endif // ULTRASONIC_SENSOR_H
