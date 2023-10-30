@@ -9,7 +9,7 @@
 
 #define TCP_PORT 4242
 #define DEBUG_printf printf
-#define BUF_SIZE 512
+#define BUF_SIZE 2048
 
 typedef struct TCP_SERVER_T_ {
     struct tcp_pcb *server_pcb;
@@ -168,7 +168,7 @@ int wifi_init()
 
     cyw43_arch_enable_sta_mode();
 
-    if (cyw43_arch_wifi_connect_timeout_ms("SINGTEL-D938", "thephugoof", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
+    if (cyw43_arch_wifi_connect_timeout_ms("ryanongzy", "82208220*Tt", CYW43_AUTH_WPA2_MIXED_PSK, 30000)) {
         DEBUG_printf("failed to connect.\n");
         return 1;
     }

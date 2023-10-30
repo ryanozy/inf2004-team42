@@ -128,12 +128,12 @@ int main()
     gpio_set_dir(ENCODEROUT_PIN2, GPIO_IN);
 
     // Init Motor
-    start_motor(14, 15, 16, 17);
+    start_motor(11, 12, 13, 14);
 
     // Init PWM
-    start_motor_pwm(1, 0);
+    start_motor_pwm(10, 15);
 
-    move_forward(14, 15, 16, 17);
+    move_forward(11, 12, 13, 14);
 
     gpio_set_irq_enabled_with_callback(ENCODEROUT_PIN, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
     gpio_set_irq_enabled_with_callback(ENCODEROUT_PIN2, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
