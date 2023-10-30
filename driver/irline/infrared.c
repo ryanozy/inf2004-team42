@@ -5,8 +5,21 @@
 #include <stdbool.h>
 #include "hardware/adc.h"
 #include "pico/time.h"
+#include <string.h>
 
-volatile bool line_check = false;
+#define SPEED_CMS 30
+
+volatile bool line_check_left = false;
+volatile bool line_check_right = false;
+volatile uint32_t start_time_barcode_black = 0;
+volatile uint32_t stop_time_barcode_black = 0;
+volatile uint32_t start_time_barcode_white = 0;
+volatile uint32_t stop_time_barcode_white = 0;
+volatile uint32_t barcode_array[9] = {0};
+volatile uint32_t barcode_counter = 0;
+volatile bool barcode_started = false;
+volatile bool barcode_ended = false;
+char barcode_string[27] = {0};
 
 void infrared_sensor_init()
 {
@@ -17,104 +30,106 @@ void infrared_sensor_init()
     gpio_set_dir(LEFT_LINE_SENSOR_PIN, GPIO_IN);
     gpio_set_dir(RIGHT_LINE_SENSOR_PIN, GPIO_IN);
     gpio_set_dir(BARCODE_SENSOR_PIN, GPIO_IN);
+}
 
-    // adc_init();
-    // adc_gpio_init(LEFT_LINE_SENSOR_PIN);
-    // adc_gpio_init(RIGHT_LINE_SENSOR_PIN);
+void measure_barcode(char color[])
+{
+    if (barcode_counter == 9)
+    {
+        // Shift the array to the left
+        for (int i = 0; i < 8; i++)
+        {
+            barcode_array[i] = barcode_array[i + 1];
+        }
+        barcode_counter--;
+    }
+
+    if (strcmp(color, "black") == 0)
+    {
+        uint32_t time_difference = stop_time_barcode_black - start_time_barcode_black;
+
+        if (time_difference > 200000)
+        {
+
+            barcode_array[barcode_counter] = 111;
+            barcode_counter++;
+        }
+        else
+        {
+            barcode_array[barcode_counter] = 1;
+            barcode_counter++;
+        }
+    }
+    else if (strcmp(color, "white") == 0)
+    {
+        uint32_t time_difference = stop_time_barcode_white - start_time_barcode_white;
+
+        if (time_difference > 200000)
+        {
+            barcode_array[barcode_counter] = 222;
+            barcode_counter++;
+        }
+        else
+        {
+            barcode_array[barcode_counter] = 2;
+            barcode_counter++;
+        }
+    }
+}
+
+void barcode_sensor_handler(uint gpio, uint32_t events)
+{
+    if (events == GPIO_IRQ_EDGE_RISE && gpio == BARCODE_SENSOR_PIN)
+    {
+        start_time_barcode_black = time_us_32();
+        stop_time_barcode_white = time_us_32();
+
+        if (barcode_started == false)
+        {
+            barcode_started = true;
+        }
+
+        measure_barcode("white");
+    }
+    else if (events == GPIO_IRQ_EDGE_FALL && gpio == BARCODE_SENSOR_PIN)
+    {
+        start_time_barcode_white = time_us_32();
+        stop_time_barcode_black = time_us_32();
+
+        if (barcode_started == true)
+        {
+            barcode_started = false;
+            barcode_ended = true;
+        }
+
+        measure_barcode("black");
+    }
 }
 
 void line_sensor_handler(uint gpio, uint32_t events)
 {
-    if (events == GPIO_IRQ_EDGE_RISE)
+    if (events == GPIO_IRQ_EDGE_RISE && gpio == RIGHT_LINE_SENSOR_PIN)
     {
-        printf("Black line detected!\n");
-        line_check = true;
+        line_check_right = true;
+    }
+    else if (events == GPIO_IRQ_EDGE_RISE && gpio == LEFT_LINE_SENSOR_PIN)
+    {
+        line_check_left = true;
+    }
+    else if (events == GPIO_IRQ_EDGE_FALL && gpio == RIGHT_LINE_SENSOR_PIN)
+    {
+        line_check_right = false;
+    }
+    else if (events == GPIO_IRQ_EDGE_FALL && gpio == LEFT_LINE_SENSOR_PIN)
+    {
+        line_check_left = false;
     }
 }
 
-bool get_line_sensor_value()
+void get_line_sensor_value()
 {
-    bool line_detected = line_check;
-    line_check = false; // Reset the flag
-    return line_detected;
-}
-
-bool recognize_barcode()
-{
-    uint32_t start_time;
-    int digitalValue;
-    uint32_t pulse_widths[100]; // Adjust the size based on your needs
-    int pulse_count = 0;
-
-    printf("Waiting for the start of the barcode (falling edge)...\n");
-
-    // Wait for the start of the barcode (falling edge)
-    while (gpio_get(BARCODE_SENSOR_PIN) == 1)
-    {
-        // Wait for falling edge
-    }
-
-    printf("Falling edge detected. Starting measurement...\n");
-
-    uint32_t timeout_start = time_us_32();
-
-    while (1)
-    {
-        // Measure the width of the black bar (falling edge to rising edge)
-        start_time = time_us_32();
-        digitalValue = gpio_get(BARCODE_SENSOR_PIN);
-
-        while (digitalValue == 0)
-        {
-            // Wait for rising edge
-            digitalValue = gpio_get(BARCODE_SENSOR_PIN);
-
-            // Check for timeout
-            if (time_us_32() - timeout_start > TIMEOUT_MICROSECONDS)
-            {
-                printf("Timeout reached while waiting for rising edge\n");
-                return false; // Timeout reached, exit function
-            }
-        }
-
-        pulse_widths[pulse_count++] = (time_us_32() - start_time) / TICKS_PER_MICROSECOND;
-
-        printf("Measured black bar. Width: %u us\n", pulse_widths[pulse_count - 1]);
-
-        // Measure the width of the white space (rising edge to falling edge)
-        start_time = time_us_32();
-        digitalValue = gpio_get(BARCODE_SENSOR_PIN);
-
-        while (digitalValue == 1)
-        {
-            // Wait for falling edge
-            digitalValue = gpio_get(BARCODE_SENSOR_PIN);
-
-            // Check for timeout
-            if (time_us_32() - timeout_start > TIMEOUT_MICROSECONDS)
-            {
-                printf("Timeout reached while waiting for falling edge\n");
-                return false; // Timeout reached, exit function
-            }
-        }
-
-        pulse_widths[pulse_count++] = (time_us_32() - start_time) / TICKS_PER_MICROSECOND;
-
-        printf("Measured white space. Width: %u us\n", pulse_widths[pulse_count - 1]);
-
-        // Repeat the process until the end of the barcode
-
-        // Process pulse widths, decode barcode, etc.
-        for (int i = 0; i < pulse_count; i++)
-        {
-            printf("Pulse Width %d: %u us\n", i, pulse_widths[i]);
-        }
-    }
-
-    // Decode the barcode based on measured widths
-    // ...
-
-    return true; // Placeholder for success
+    printf("Left Line Sensor: %s\n", line_check_left ? "true" : "false");
+    printf("Right Line Sensor: %s\n", line_check_right ? "true" : "false");
 }
 
 int main()
@@ -125,16 +140,60 @@ int main()
 
     // Set up GPIO interrupt on rising edge
     gpio_set_irq_enabled_with_callback(RIGHT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE, true, &line_sensor_handler);
+    gpio_set_irq_enabled_with_callback(LEFT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE, true, &line_sensor_handler);
+
+    // Set up GPIO interrupt on falling edge
+    gpio_set_irq_enabled_with_callback(RIGHT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_FALL, true, &line_sensor_handler);
+    gpio_set_irq_enabled_with_callback(LEFT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_FALL, true, &line_sensor_handler);
+
+    // Setup GPIO interrupt for barcode sensor
+    gpio_set_irq_enabled_with_callback(BARCODE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &barcode_sensor_handler);
 
     while (1)
     {
-        bool barcode_check = recognize_barcode();
-        // printf("After Barcode Detection\n");
-        printf("Barcode Recognition: %s\n", barcode_check ? "true" : "false");
-        
-        tight_loop_contents();
 
-        sleep_ms(1000); // Wait for 1 second before the next iteration
+        // get_line_sensor_value();
+
+        if (barcode_counter == 9)
+        {
+            // Convert barcode array to binary
+            // Convert 2 to 0 and 222 to 000
+            // No need to convert 1s
+
+            for (int i = 0; i < 9; i++)
+            {
+                if (barcode_array[i] == 2)
+                {
+                    strcat(barcode_string, "0");
+                }
+                else if (barcode_array[i] == 222)
+                {
+                    strcat(barcode_string, "000");
+                }
+                else if (barcode_array[i] == 1)
+                {
+                    strcat(barcode_string, "1");
+                }
+                else if (barcode_array[i] == 111)
+                {
+                    strcat(barcode_string, "111");
+                }
+            }
+
+            // Check if barcode is F
+            if (strcmp(barcode_string, BARCODE_F) == 0)
+            {
+                printf("Barcode is F\n");
+                printf("Barcode String: %s\n", barcode_string);
+            }
+
+            // Clear barcode string
+            memset(barcode_string, 0, sizeof(barcode_string));
+        }
+        sleep_ms(100); // Wait for 1 second before the next iteration
+
+        // Clear the terminal
+        // printf("\033[2J");
     }
 
     return 0;

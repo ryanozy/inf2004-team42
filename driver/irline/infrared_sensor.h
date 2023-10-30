@@ -13,8 +13,14 @@
 
 // Function declarations
 void infrared_sensor_init();
-bool get_line_sensor_value();
+void get_line_sensor_value();
 bool recognize_barcode();
 void line_sensor_handler(uint gpio, uint32_t events);
+
+// Define the barcode 39 library array
+// Each element is a sequence of max 27 characters
+// 0 = Thin White, 000 = Thick White, 1 = Thin Black, 111 = Thick Black
+
+#define BARCODE_F "101110111000101"
 
 #endif
