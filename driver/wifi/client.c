@@ -2,7 +2,7 @@
 #include <winsock2.h>
 #include <stdbool.h>
 
-#define SERVER_IP "192.168.1.229" // Change this to the IP address of your server
+#define SERVER_IP "172.20.10.2" // Change this to the IP address of your server
 #define SERVER_PORT 4242
 
 int main()

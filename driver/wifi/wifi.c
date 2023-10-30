@@ -18,15 +18,7 @@ typedef struct TCP_SERVER_T_ {
     uint16_t recv_len;  // Add recv_len member
 } TCP_SERVER_T;
 
-static TCP_SERVER_T* tcp_server_init(void) {
-    TCP_SERVER_T *state = calloc(1, sizeof(TCP_SERVER_T));
-    if (!state) {
-        DEBUG_printf("failed to allocate state\n");
-        return NULL;
-    }
-    return state;
-}
-
+// Close the TCP server connection
 static err_t tcp_server_close(void *arg) {
     TCP_SERVER_T *state = (TCP_SERVER_T*)arg;
     if (state->client_pcb != NULL) {
@@ -46,13 +38,14 @@ static err_t tcp_server_close(void *arg) {
     return ERR_OK;
 }
 
+// Receive data from the TCP client
 err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err) {
     TCP_SERVER_T *state = (TCP_SERVER_T*)arg;
     if (!p) {
         return ERR_OK;
     }
     if (p->tot_len > 0) {
-        DEBUG_printf("Received buffer from client:\n");
+        // Copy the received data into the buffer
         const uint16_t buffer_left = BUF_SIZE - state->recv_len;
         state->recv_len += pbuf_copy_partial(p, state->buffer_recv + state->recv_len,
                                              p->tot_len > buffer_left ? buffer_left : p->tot_len, 0);
@@ -63,7 +56,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
         for (int i = 0; i < state->recv_len; i++) {
             DEBUG_printf("%c", state->buffer_recv[i]);
         }
-        printf("\n");
+        DEBUG_printf("\n");
 
         // Send an acknowledge message to the client
         const char* ack_msg = "Message received!";
@@ -82,11 +75,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
     return ERR_OK;
 }
 
-static err_t tcp_server_poll(void *arg, struct tcp_pcb *tpcb) {
-    // DEBUG_printf("tcp_server_poll_fn\n");
-    return ERR_OK;
-}
-
+// Handle TCP server errors
 static void tcp_server_err(void *arg, err_t err) {
     // Enable to debug errors
 
@@ -95,7 +84,9 @@ static void tcp_server_err(void *arg, err_t err) {
     // }
 }
 
+// Handle TCP server connections
 static err_t tcp_server_accept(void *arg, struct tcp_pcb *client_pcb, err_t err) {
+    
     TCP_SERVER_T *state = (TCP_SERVER_T*)arg;
     if (err != ERR_OK || client_pcb == NULL) {
         DEBUG_printf("Failure in accept\n");
@@ -106,13 +97,15 @@ static err_t tcp_server_accept(void *arg, struct tcp_pcb *client_pcb, err_t err)
     state->client_pcb = client_pcb;
     tcp_arg(client_pcb, state);
     tcp_sent(client_pcb, NULL);
+
+    // Callback for TCP client data reception and errors
     tcp_recv(client_pcb, tcp_server_recv);
-    tcp_poll(client_pcb, tcp_server_poll, 0);
     tcp_err(client_pcb, tcp_server_err);
 
     return ERR_OK;
 }
 
+// Open the TCP server connection
 static bool tcp_server_open(void *arg) {
     TCP_SERVER_T *state = (TCP_SERVER_T*)arg;
     DEBUG_printf("Starting server at %s on port %u\n", ip4addr_ntoa(netif_ip4_addr(netif_list)), TCP_PORT);
@@ -139,37 +132,63 @@ static bool tcp_server_open(void *arg) {
     }
 
     tcp_arg(state->server_pcb, state);
+
+    // Callback for TCP server connections
     tcp_accept(state->server_pcb, tcp_server_accept);
 
     return true;
 }
 
-int main() {
-    stdio_init_all();
+static TCP_SERVER_T* create_tcp_server(void) {
+    TCP_SERVER_T *state = calloc(1, sizeof(TCP_SERVER_T));
+
+    if (!state) {
+        DEBUG_printf("failed to allocate state\n");
+        return NULL;
+    }
+    
+    // Open the TCP server connection
+    if (!tcp_server_open(state)) {
+        tcp_server_close(state);
+        cyw43_arch_deinit();
+        return NULL;
+    }
+    
+    return state;
+
+}
+
+int wifi_init()
+{
 
     if (cyw43_arch_init()) {
-        printf("failed to initialise\n");
+        DEBUG_printf("failed to initialise\n");
         return 1;
     }
 
     cyw43_arch_enable_sta_mode();
 
-    printf("Connecting to Wi-Fi...\n");
-    if (cyw43_arch_wifi_connect_timeout_ms("SINGTEL-D938", "thephugoof", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("failed to connect.\n");
+    if (cyw43_arch_wifi_connect_timeout_ms("ryanongzy", "82208220*Tt", CYW43_AUTH_WPA2_MIXED_PSK, 30000)) {
+        DEBUG_printf("failed to connect.\n");
         return 1;
-    } else {
-        printf("Connected.\n");
     }
 
-    TCP_SERVER_T *state = tcp_server_init();
-    if (!state) {
+    return 0;
+
+}
+
+int main() {
+    stdio_init_all();
+
+    // Initialize the Wi-Fi driver
+    if (wifi_init()) {
         cyw43_arch_deinit();
         return 1;
     }
 
-    if (!tcp_server_open(state)) {
-        tcp_server_close(state);
+    // Initialize the TCP server and open the connection
+    TCP_SERVER_T *state = create_tcp_server();
+    if (!state) {
         cyw43_arch_deinit();
         return 1;
     }

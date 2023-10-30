@@ -58,7 +58,7 @@ void start_motor_pwm(int leftmotor_pwm_pin, int rightmotor_pwm_pin)
     pwm_set_chan_level(slice_num_0, PWM_CHAN_A, 12500 / 2);
 
     // Left Motor
-    pwm_set_chan_level(slice_num_1, PWM_CHAN_B, 0);
+    pwm_set_chan_level(slice_num_1, PWM_CHAN_B, 12500 / 2);
 
     // Set the PWM running for both slices
     pwm_set_enabled(slice_num_0, true);
