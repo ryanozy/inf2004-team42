@@ -36,6 +36,13 @@ void gpio_callback(uint gpio, uint32_t events);
 bool check_wheel_moving(struct repeating_timer *t);
 bool pid(struct repeating_timer *t);
 
+/**
+ * @brief Main function to calculate speed of wheels.
+ * 
+ * This function is called on a interrupt when the encoder notch is detected. (Rising Edge)
+ * It calculates the speed of the wheel and distance travelled, updating the global variables.
+ * 
+ */
 void calculate_speed(uint32_t time_of_notch, int encoder_number)
 {
     // If Encoder Pin is 2, index is 0
@@ -56,10 +63,11 @@ void calculate_speed(uint32_t time_of_notch, int encoder_number)
     }
 }
 
-/*
-GPIO interrupt callback function
-Called when the START pseudo-button is pressed or released
-*/
+/**
+ * @brief Callback function for GPIO interrupts.
+ * 
+ * Called when the encoder notch is detected. (Rising Edge)
+ */
 void gpio_callback(uint gpio, uint32_t events)
 {
     if ((gpio == ENCODEROUT_PIN || gpio == ENCODEROUT_PIN2) && events == GPIO_IRQ_EDGE_RISE)
@@ -68,11 +76,12 @@ void gpio_callback(uint gpio, uint32_t events)
     }
 }
 
-/*
-Repeated timer callback function
-Called every 50ms to check if wheel is moving
-Set speed to 0 if wheel is not moving
-*/
+/**
+ * @brief Repeated timer callback function
+ * 
+ * Called every 50ms to check if wheel is moving
+ * Set speed to 0 if wheel is not moving
+ */
 bool check_wheel_moving(struct repeating_timer *t)
 {
     // Check if distance not changed
@@ -92,9 +101,13 @@ bool check_wheel_moving(struct repeating_timer *t)
     return true;
 }
 
-/*
-
-*/
+/**
+ * @brief PID function
+ * 
+ * This function is called every 50ms to calculate the PID values for the left and right motors.
+ * The PID values are then used to set the speed of the motors.
+ * This function ensures motors are moving at the desired speed.
+ */
 bool pid(struct repeating_timer *t)
 {
     double error_left = desired_speed_cm_s - speed[0];

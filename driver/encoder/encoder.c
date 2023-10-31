@@ -17,6 +17,12 @@ void calculate_speed(uint32_t time_of_notch, int encoder_number);
 void gpio_callback(uint gpio, uint32_t events);
 bool check_wheel_moving(struct repeating_timer *t);
 
+/**
+ * @brief Main function to calculate speed of wheels.
+ * 
+ * This function is called on a interrupt when the encoder notch is detected. (Rising Edge)
+ * It calculates the speed of the wheel and distance travelled, updating the global variables.
+ */
 void calculate_speed(uint32_t time_of_notch, int encoder_number)
 {
     // If Encoder Pin is 2, index is 0
@@ -37,10 +43,12 @@ void calculate_speed(uint32_t time_of_notch, int encoder_number)
     }
 }
 
-/*
-GPIO interrupt callback function
-Called when the START pseudo-button is pressed or released
-*/
+/**
+ * @brief Callback function for GPIO interrupts.
+ * 
+ * Called when the encoder notch is detected. (Rising Edge)
+ * Calls calculate_speed() to calculate the speed of the wheel and pass the time of the notch.
+ */
 void gpio_callback(uint gpio, uint32_t events)
 {
     if ((gpio == ENCODEROUT_PIN || gpio == ENCODEROUT_PIN2) && events == GPIO_IRQ_EDGE_RISE)
@@ -49,6 +57,13 @@ void gpio_callback(uint gpio, uint32_t events)
     }
 }
 
+/**
+ * @brief Check if wheel is moving.
+ * 
+ * This function is called every 50ms to check if the wheel is moving.
+ * If the wheel is not moving, the speed is set to 0.
+ * 
+ */
 bool check_wheel_moving(struct repeating_timer *t)
 {
     // Check if distance not changed
@@ -85,8 +100,10 @@ int main()
     // Init PWM
     start_motor_pwm(15, 10);
 
+    // Move forward
     move_forward(14, 13, 12, 11);
 
+    // Enable interrupts on rising edge
     gpio_set_irq_enabled_with_callback(ENCODEROUT_PIN, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
     gpio_set_irq_enabled_with_callback(ENCODEROUT_PIN2, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
 

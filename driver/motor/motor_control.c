@@ -10,11 +10,11 @@
 #include "motor.h"
 
 #define MOTOR_LEFT_PIN1 14
-#define MOTOR_LEFT_PIN2 15
-#define MOTOR_RIGHT_PIN1 16
-#define MOTOR_RIGHT_PIN2 17
-#define MOTOR_LEFT_PWM_PIN 1
-#define MOTOR_RIGHT_PWM_PIN 0
+#define MOTOR_LEFT_PIN2 13
+#define MOTOR_RIGHT_PIN1 12
+#define MOTOR_RIGHT_PIN2 11
+#define MOTOR_LEFT_PWM_PIN 15
+#define MOTOR_RIGHT_PWM_PIN 10
 
 
 /**
