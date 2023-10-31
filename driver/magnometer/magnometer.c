@@ -1,7 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "magnometer.h" // Include the magnometer header file
-
-#include <stdio.h> // Include standard input-output library
-
+#include "pico/stdlib.h"
 
 int main()
 {
@@ -20,9 +20,11 @@ int main()
 
         printf("Heading: %f\n", heading);
 
-        int16_t raw_data[3] = get_magnometer_data();
+        uint16_t* raw_data = get_magnometer_data();
 
-        print("Magnometer data x: %d, y: %d, z: %d\n", raw_data[0], raw_data[1], raw_data[2]);
-
+        printf("Magnometer data x: %d, y: %d, z: %d\n", raw_data[0], raw_data[1], raw_data[2]);
+        
+        // Free the memory allocated by malloc
+        free(raw_data);
     }
 }

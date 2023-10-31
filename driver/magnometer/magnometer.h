@@ -2,6 +2,7 @@
 #ifndef MAGNOMETER_H
 #define MAGNOMETER_H
 
+#include <stdlib.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 #include "math.h"
@@ -28,12 +29,14 @@ bool init_i2c_bus() {
     // Enable pull up on SDA/SCL lines
     gpio_pull_up(PICO_DEFAULT_I2C_SDA_PIN);
     gpio_pull_up(PICO_DEFAULT_I2C_SCL_PIN);
+    return true;
 }
 
 bool init_magnometer() {
     // initialize magnetometer
     uint8_t mag_config[] = {MAGNOMETER_MODE_REGISTER, MAGNOMETER_CONFIG_REGISTER_A}; // 0x02, 0x00
     i2c_write_blocking(i2c0, MAGNOMETER_ADDRESS, mag_config, 2, false); 
+    return true;
 }
 
 float get_heading() {
@@ -50,7 +53,6 @@ float get_heading() {
     
     // Convert the data to 16-bit signed values
     int16_t x = (mag_data[0] << 8) | mag_data[1];
-    int16_t z = (mag_data[2] << 8) | mag_data[3];
     int16_t y = (mag_data[4] << 8) | mag_data[5];
     
     // Calculate the heading
@@ -64,7 +66,7 @@ float get_heading() {
     return heading;
 }
 
-uint16_t *get_magnometer_data(){
+uint16_t* get_magnometer_data(){
     uint8_t mag_reg[1] = {MAGNOMETER_DATA_REGISTER};
     i2c_write_blocking(i2c0, MAGNOMETER_ADDRESS, mag_reg, 1, true);
 
@@ -78,8 +80,10 @@ uint16_t *get_magnometer_data(){
     int16_t y = (mag_data[4] << 8) | mag_data[5];
 
     // put the data into a 16 bit unsigned int
-    uint16_t data[3] = {x, y, z};
-
+    uint16_t* data = malloc(3 * sizeof(uint16_t));
+    data[0] = x;
+    data[1] = y;
+    data[2] = z;
 
     return data;
 }
