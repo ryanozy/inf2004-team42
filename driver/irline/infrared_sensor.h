@@ -21,6 +21,8 @@ void line_sensor_handler(uint gpio, uint32_t events);
 // Each element is a sequence of max 27 characters
 // 0 = Thin White, 000 = Thick White, 1 = Thin Black, 111 = Thick Black
 
+#define BARCODE_A "111010100010111"
 #define BARCODE_F "101110111000101"
+#define BARCODE_ASTERISK "100010111011101"
 
 #endif

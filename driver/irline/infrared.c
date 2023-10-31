@@ -17,6 +17,7 @@ volatile uint32_t start_time_barcode_white = 0;
 volatile uint32_t stop_time_barcode_white = 0;
 volatile uint32_t barcode_array[9] = {0};
 volatile uint32_t barcode_counter = 0;
+volatile uint32_t barcode_divider = 0;
 volatile bool barcode_started = false;
 volatile bool barcode_ended = false;
 char barcode_string[27] = {0};
@@ -46,9 +47,21 @@ void measure_barcode(char color[])
 
     if (strcmp(color, "black") == 0)
     {
-        uint32_t time_difference = stop_time_barcode_black - start_time_barcode_black;
 
-        if (time_difference > 200000)
+        uint32_t time_difference = stop_time_barcode_black - start_time_barcode_black;
+        printf("Time Difference: %d\n", time_difference);
+
+        if (barcode_counter == 0)
+        {
+            // Set the divider to the first time difference
+            // Use this divider to determine if the barcode is thick or thin
+            barcode_divider = time_difference;
+            printf("Barcode Divider: %d\n", barcode_divider);
+        }
+
+        printf("time_difference / barcode_divider: %d\n", time_difference / barcode_divider);
+
+        if (time_difference / barcode_divider >= 2)
         {
 
             barcode_array[barcode_counter] = 111;
@@ -63,16 +76,26 @@ void measure_barcode(char color[])
     else if (strcmp(color, "white") == 0)
     {
         uint32_t time_difference = stop_time_barcode_white - start_time_barcode_white;
+        printf("Time Difference: %d\n", time_difference);
+        printf("time_difference / barcode_divider: %d\n", time_difference / barcode_divider);
 
-        if (time_difference > 200000)
+        if (barcode_counter == 0)
         {
-            barcode_array[barcode_counter] = 222;
-            barcode_counter++;
+
+            // Barcode has not started yet
         }
         else
         {
-            barcode_array[barcode_counter] = 2;
-            barcode_counter++;
+            if (time_difference / barcode_divider >= 2)
+            {
+                barcode_array[barcode_counter] = 222;
+                barcode_counter++;
+            }
+            else
+            {
+                barcode_array[barcode_counter] = 2;
+                barcode_counter++;
+            }
         }
     }
 }
@@ -95,12 +118,6 @@ void barcode_sensor_handler(uint gpio, uint32_t events)
     {
         start_time_barcode_white = time_us_32();
         stop_time_barcode_black = time_us_32();
-
-        if (barcode_started == true)
-        {
-            barcode_started = false;
-            barcode_ended = true;
-        }
 
         measure_barcode("black");
     }
@@ -185,12 +202,17 @@ int main()
             {
                 printf("Barcode is F\n");
                 printf("Barcode String: %s\n", barcode_string);
-            }
+            } else if (strcmp(barcode_string, BARCODE_A) == 0) {
+                printf("Barcode is A\n");
+                printf("Barcode String: %s\n", barcode_string);
+            } else if (strcmp(barcode_string, BARCODE_ASTERISK) == 0) {
+                printf("Barcode is *\n");
+                printf("Barcode String: %s\n", barcode_string);
+            } 
 
             // Clear barcode string
             memset(barcode_string, 0, sizeof(barcode_string));
         }
-        sleep_ms(100); // Wait for 1 second before the next iteration
 
         // Clear the terminal
         // printf("\033[2J");

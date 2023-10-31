@@ -110,8 +110,8 @@ bool pid(struct repeating_timer *t)
     double left_motor_speed = KP * error_left + KI * integral_left + KD * derivative_left;
     double right_motor_speed = KP * error_right + KI * integral_right + KD * derivative_right;
 
-    pwm_set_gpio_level(1, left_motor_speed);
-    pwm_set_gpio_level(0, right_motor_speed);
+    pwm_set_gpio_level(15, left_motor_speed);
+    pwm_set_gpio_level(10, right_motor_speed);
 
     return true;
 }

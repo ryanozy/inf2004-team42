@@ -59,7 +59,7 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
         DEBUG_printf("\n");
 
         // Send an acknowledge message to the client
-        const char* ack_msg = "Message received!";
+        const char* ack_msg = "ACK";
         tcp_write(tpcb, ack_msg, strlen(ack_msg), 1);
     }
     pbuf_free(p);
@@ -158,6 +158,9 @@ static TCP_SERVER_T* create_tcp_server(void) {
 
 }
 
+/*
+Initialize the Wi-Fi driver
+*/
 int wifi_init()
 {
 
