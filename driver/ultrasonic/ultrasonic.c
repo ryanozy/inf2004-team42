@@ -11,15 +11,24 @@ volatile uint32_t pulse_start_time = 0; // Variable to store the start time of t
 volatile uint32_t pulse_end_time = 0; // Variable to store the end time of the echo pulse
 volatile bool pulse_received = false; // Flag to indicate if an echo pulse has been received
 
+bool checkPulseTimes(uint32_t start_time, uint32_t end_time) {
+    // Check if start time is less than end time
+    if (start_time < end_time) {
+        return true; // Valid pulse times
+    } else {
+        return false; // Invalid pulse times
+    }
+}
+
 void on_echo_pin_change(uint gpio, uint32_t events) {
     if (gpio_get(ECHO_PIN)) {
         pulse_start_time = time_us_32(); // Record the start time of the echo pulse
     } else {
         pulse_end_time = time_us_32(); // Record the end time of the echo pulse
-        pulse_received = true; // Set the flag to indicate that the echo pulse has been received
+        pulse_received = checkPulseTimes(pulse_start_time,pulse_end_time); // Set the flag to indicate that the echo pulse has been received
     }
 }
-
+ 
 void ultrasonic_init() {
     gpio_init(TRIGGER_PIN); // Initialize the trigger pin
     gpio_init(ECHO_PIN); // Initialize the echo pin
