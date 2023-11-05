@@ -161,6 +161,7 @@ int main()
     while (true)
     {
         printf("Left Motor Speed: %lfcm/s\nRight Motor Speed: %lfcm/s\n", speed[0], speed[1]);
+        printf("Left Motor Distance: %lfcm\nRight Motor Distance: %lfcm\n", distance[0], distance[1]);
 
         sleep_ms(300);
 

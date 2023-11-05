@@ -115,7 +115,28 @@ int main()
     {
         printf("Left Motor Speed: %lfcm/s\nRight Motor Speed: %lfcm/s\n", speed[0], speed[1]);
 
-        sleep_ms(300);
+        sleep_ms(1000);
+
+        move_backward(14, 13, 12, 11);
+
+        sleep_ms(1000);
+
+        turn_left(14, 13, 12, 11);
+
+        sleep_ms(1000);
+
+        turn_right(14, 13, 12, 11);
+
+        sleep_ms(1000);
+
+        move_forward(14, 13, 12, 11);
+        
+        // For Loop for the speed control
+        for (int i = 0; i < 10; i++)
+        {
+            set_speed(i * 10, 15, 10);
+            sleep_ms(1000);
+        }
 
         // Clear screen
         printf("\033[2J");

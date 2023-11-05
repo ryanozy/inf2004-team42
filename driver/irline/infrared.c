@@ -57,7 +57,7 @@ void measure_barcode(char color[])
     {
 
         uint32_t time_difference = stop_time_barcode_black - start_time_barcode_black;
-        printf("Time Difference: %d\n", time_difference);
+        // printf("Time Difference: %d\n", time_difference);
 
         if (barcode_counter == 0)
         {
@@ -73,11 +73,13 @@ void measure_barcode(char color[])
         {
 
             barcode_array[barcode_counter] = 111;
+            printf("Thick Black Barcode\n");
             barcode_counter++;
         }
         else
         {
             barcode_array[barcode_counter] = 1;
+            printf("Thin Black Barcode\n");
             barcode_counter++;
         }
     }
@@ -97,11 +99,13 @@ void measure_barcode(char color[])
             if (time_difference / barcode_divider >= 2)
             {
                 barcode_array[barcode_counter] = 222;
+                printf("Thick White Barcode\n");
                 barcode_counter++;
             }
             else
             {
                 barcode_array[barcode_counter] = 2;
+                printf("Thin White Barcode\n");
                 barcode_counter++;
             }
         }

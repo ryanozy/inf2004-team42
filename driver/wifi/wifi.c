@@ -58,6 +58,9 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
         }
         DEBUG_printf("\n");
 
+        // Clear the buffer
+        memset(state->buffer_recv, 0, BUF_SIZE);
+
         // Send an acknowledge message to the client
         const char* ack_msg = "ACK";
         tcp_write(tpcb, ack_msg, strlen(ack_msg), 1);
