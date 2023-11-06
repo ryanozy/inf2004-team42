@@ -1,4 +1,3 @@
-// Function Definitions for Motor Control
 #define ENCODEROUT_PIN 2
 #define ENCODEROUT_PIN2 3
 #define DISTANCE_BETWEEN_NOTCHES_CM 1.0525
@@ -34,6 +33,28 @@ void calculate_speed(uint32_t time_of_notch, int encoder_number);
 void gpio_callback(uint gpio, uint32_t events);
 bool check_wheel_moving(struct repeating_timer *t);
 bool pid(struct repeating_timer *t);
+void init_encoder(int encoder_pin, int encoder_pin2);
+
+/**
+ * @brief Initialize the encoder pins.
+ * 
+ * This function is called in main() to initialize the encoder pins.
+ * It sets the GPIO pins as inputs and enables interrupts on rising edge.
+*/
+void init_encoder(int encoder_pin, int encoder_pin2)
+{
+    gpio_init(encoder_pin);
+    gpio_init(encoder_pin2);
+
+    gpio_set_dir(encoder_pin, GPIO_IN);
+    gpio_set_dir(encoder_pin2, GPIO_IN);
+
+    gpio_pull_up(encoder_pin);
+    gpio_pull_up(encoder_pin2);
+
+    gpio_set_irq_enabled_with_callback(encoder_pin, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
+    gpio_set_irq_enabled_with_callback(encoder_pin2, GPIO_IRQ_EDGE_RISE, true, &gpio_callback);
+}
 
 /**
  * @brief PID function

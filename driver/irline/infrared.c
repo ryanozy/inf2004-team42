@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "infrared_sensor.h"
 #include "hardware/gpio.h"
 #include "pico/stdlib.h"
 #include <stdbool.h>
