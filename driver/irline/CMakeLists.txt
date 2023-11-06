@@ -1,6 +1,6 @@
 if (TARGET tinyusb_device)
 add_executable(irline
-        infrared.c
+        infrared.c infrared.h
         )
 
 target_link_libraries(irline pico_stdlib hardware_adc hardware_pwm)

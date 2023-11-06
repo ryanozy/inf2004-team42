@@ -1,4 +1,4 @@
-add_executable(wifi wifi.c)
+add_executable(wifi wifi.c wifi.h)
 
 target_compile_definitions(wifi PRIVATE
 WIFI_SSID=\"${WIFI_SSID}\"
