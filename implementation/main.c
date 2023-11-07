@@ -24,6 +24,42 @@
 #define ENCODEROUT_PIN 2
 #define ENCODEROUT_PIN2 3
 
+const static char *MOVE_FORWARD = "w";
+const static char *MOVE_BACKWARD = "s";
+const static char *TURN_LEFT = "a";
+const static char *TURN_RIGHT = "d";
+
+void motor_control(char recv_buffer[1])
+{
+
+    if (recv_buffer[0] == MOVE_FORWARD[0])
+    {
+        printf("Moving forward\n");
+        move_forward(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+    }
+    else if (recv_buffer[0] == MOVE_BACKWARD[0])
+    {
+        printf("Moving backward\n");
+        move_backward(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+    }
+    else if (recv_buffer[0] == TURN_LEFT[0])
+    {
+        printf("Turning left\n");
+        turn_left(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+    }
+    else if (recv_buffer[0] == TURN_RIGHT[0])
+    {
+        printf("Turning right\n");
+        turn_right(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+    }
+    else
+    {
+        printf("Stopping\n");
+        stop_motor(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+    }
+
+}
+
 int main()
 {
 
@@ -41,21 +77,26 @@ int main()
     init_encoder(ENCODEROUT_PIN, ENCODEROUT_PIN2);
 
     // Initialize the Wi-Fi driver
-    if (wifi_init()) {
+    if (wifi_init())
+    {
         cyw43_arch_deinit();
         return 1;
     }
 
     // Initialize the TCP server and open the connection
     TCP_SERVER_T *state = create_tcp_server();
-    if (!state) {
+    if (!state)
+    {
         cyw43_arch_deinit();
         return 1;
     }
 
-    while (1) {
+    while (1)
+    {
         // The main loop
         cyw43_arch_poll(); // Poll for Wi-Fi driver or lwIP work
         sleep_ms(1000);
     }
+
+    return 0;
 }

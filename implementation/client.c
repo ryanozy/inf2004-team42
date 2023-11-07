@@ -58,15 +58,6 @@ int main()
         printf("Enter a message to send to the server: ");
         fgets(message, 256, stdin);
         send(client_socket, message, strlen(message), 0);
-
-        // Receive acknowledgement from the server
-        char ack[256];
-        int bytes_received = recv(client_socket, ack, 256, 0);
-        if (bytes_received > 0)
-        {
-            ack[bytes_received] = '\0';
-            printf("Server acknowledgement: %s\n", ack);
-        }
     }
 
     // Close the socket and cleanup Winsock

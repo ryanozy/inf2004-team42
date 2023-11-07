@@ -24,6 +24,7 @@ __long_double_t prev_distance[2] = {0, 0};
 
 void start_motor(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int rightmotor_pin2);
 void start_motor_pwm(int leftmotor_pwm_pin, int rightmotor_pwm_pin);
+void stop_motor(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int rightmotor_pin2);
 void move_forward(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int rightmotor_pin2);
 void move_backward(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int rightmotor_pin2);
 void turn_left(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int rightmotor_pin2);
@@ -151,7 +152,7 @@ bool check_wheel_moving(struct repeating_timer *t)
 }
 
 /**
- * Initialize GPIO pins for motor control.
+ * @brief Initialize GPIO pins for motor control.
  *
  * @param leftmotor_pin1   GPIO pin for the left motor, forward control.
  * @param leftmotor_pin2   GPIO pin for the left motor, reverse control.
@@ -173,7 +174,7 @@ void start_motor(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, in
 }
 
 /**
- * Initialize PWM for motor speed control.
+ * @brief Initialize PWM for motor speed control.
  *
  * @param leftmotor_pwm_pin   GPIO pin for the left motor's PWM input.
  * @param rightmotor_pwm_pin  GPIO pin for the right motor's PWM input.
@@ -210,7 +211,21 @@ void start_motor_pwm(int leftmotor_pwm_pin, int rightmotor_pwm_pin)
 }
 
 /**
- * Move the robot forward.
+ * @brief Stop the motors.
+ * 
+ * This function is called to stop the motors.
+ * It sets all the GPIO pins to 0.
+ */
+void stop_motor(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int rightmotor_pin2)
+{
+    gpio_put(leftmotor_pin1, 0);
+    gpio_put(leftmotor_pin2, 0);
+    gpio_put(rightmotor_pin1, 0);
+    gpio_put(rightmotor_pin2, 0);
+}
+
+/**
+ * @brief Move the robot forward.
  *
  * @param leftmotor_pin1   GPIO pin for the left motor, forward control.
  * @param leftmotor_pin2   GPIO pin for the left motor, reverse control.
@@ -226,7 +241,7 @@ void move_forward(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, i
 }
 
 /**
- * Move the robot backward.
+ * @brief Move the robot backward.
  *
  * @param leftmotor_pin1   GPIO pin for the left motor, forward control.
  * @param leftmotor_pin2   GPIO pin for the left motor, reverse control.
@@ -242,7 +257,7 @@ void move_backward(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, 
 }
 
 /**
- * Turn the robot left.
+ * @brief Turn the robot left.
  *
  * @param leftmotor_pin1   GPIO pin for the left motor, forward control.
  * @param leftmotor_pin2   GPIO pin for the left motor, reverse control.
@@ -258,7 +273,7 @@ void turn_left(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int 
 }
 
 /**
- * Turn the robot right.
+ * @brief Turn the robot right.
  *
  * @param leftmotor_pin1   GPIO pin for the left motor, forward control.
  * @param leftmotor_pin2   GPIO pin for the left motor, reverse control.
@@ -274,7 +289,7 @@ void turn_right(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int
 }
 
 /**
- * Set the motor speed as a percentage.
+ * @brief Set the motor speed as a percentage.
  *
  * @param speed              Speed percentage (0 to 100).
  * @param leftmotor_pwm_pin  GPIO pin for the left motor's PWM input.
