@@ -13,9 +13,11 @@
 4. Motor Right Pin 1 and 2 - GP11, GP12
 5. Encoder Left - GP2
 6. Encoder Right - GP3
-7. IR Sensor - TBC
-8. Ultrasonic Sensor - GP18, GP 19
-9. Magnometer - GP4, GP5
+7. IR Sensor (Left) - GP20
+8. IR Sensor (Right) - GP21
+9. Barcode Sensor - GP22
+10. Ultrasonic Sensor - GP18, GP 19
+11. Magnometer - GP4, GP5
 
 ## Thing to do:
 - [x] Create a repo
