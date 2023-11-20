@@ -29,6 +29,8 @@ const static char *MOVE_BACKWARD = "s";
 const static char *TURN_LEFT = "a";
 const static char *TURN_RIGHT = "d";
 
+double front_heading = 0.0;
+
 void motor_control(char recv_buffer[1])
 {
 
@@ -36,6 +38,10 @@ void motor_control(char recv_buffer[1])
     {
         printf("Moving forward\n");
         move_forward(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+        front_heading = get_heading();
+        if (front_heading < 0) {
+            front_heading = front_heading * -1.0;
+        }
     }
     else if (recv_buffer[0] == MOVE_BACKWARD[0])
     {
@@ -68,21 +74,21 @@ void check_dead_end()
         stop_motor(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
         turn_left(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 80.0);
     }
-    else if (line_check_right == false && line_check_left == true)
-    {
-        left_desired_speed_cm_s = 45;
-        right_desired_speed_cm_s = 40;    
-    }
-    else if (line_check_right == true && line_check_left == false)
-    {
-        right_desired_speed_cm_s = 45;
-        left_desired_speed_cm_s = 40;
-    }
-    else if (line_check_left == false && line_check_right == false)
-    {
-        left_desired_speed_cm_s = 40;
-        right_desired_speed_cm_s = 40;
-    }
+    // else if (line_check_right == false && line_check_left == true)
+    // {
+    //     left_desired_speed_cm_s = 35;
+    //     right_desired_speed_cm_s = 30;
+    // }
+    // else if (line_check_right == true && line_check_left == false)
+    // {
+    //     right_desired_speed_cm_s = 35;
+    //     left_desired_speed_cm_s = 30;
+    // }
+    // else if (line_check_left == false && line_check_right == false)
+    // {
+    //     left_desired_speed_cm_s = 30;
+    //     right_desired_speed_cm_s = 30;
+    // }
 }
 
 void interrupt_handler(uint gpio, uint32_t events)
@@ -104,6 +110,34 @@ void interrupt_handler(uint gpio, uint32_t events)
     {
         gpio_callback(gpio, events);
     }
+}
+
+bool get_new_heading()
+{
+
+    float temp_heading = get_heading();
+    if (temp_heading < 0){
+        temp_heading = temp_heading * -1.0;
+    }
+
+    if ((temp_heading - front_heading) > 0.2)
+    {
+        right_desired_speed_cm_s = 30;
+        left_desired_speed_cm_s = 35;
+    }
+    else if ((temp_heading - front_heading) < -0.2)
+    {
+
+        left_desired_speed_cm_s = 35;
+        right_desired_speed_cm_s = 30;
+    }
+    else
+    {
+        right_desired_speed_cm_s = 30;
+        left_desired_speed_cm_s = 30;
+    }
+
+    return true;
 }
 
 bool shoot_sensor()
@@ -136,6 +170,10 @@ int main()
 
     // Initialize the ultrasonic sensor
     ultrasonic_init();
+
+    init_i2c_bus();
+
+    init_magnometer();
 
     // Initialize the motor
     start_motor(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
@@ -182,10 +220,13 @@ int main()
     // add_repeating_timer_ms(-50, &shoot_sensor, NULL, &ultrasonictimer);
     // add_repeating_timer_ms(20, &stop_sensor, NULL, &ultrasonictimer);
 
+    struct repeating_timer getheading;
+    add_repeating_timer_ms(-20, &get_new_heading, NULL, &getheading);
+
     struct repeating_timer terminaltimer;
     add_repeating_timer_ms(1000, &clear_terminal, NULL, &terminaltimer);
 
-    move_forward(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+    // move_forward(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
 
     while (1)
     {
