@@ -18,13 +18,14 @@ void line_sensor_handler(uint gpio, uint32_t events);
 void get_line_sensor_value();
 void decode_barcode();
 
+
 // Define GPIO pins for infrared sensor
-#define LEFT_LINE_SENSOR_PIN 2
-#define RIGHT_LINE_SENSOR_PIN 3
-#define BARCODE_SENSOR_PIN 4
+#define LEFT_LINE_SENSOR_PIN 20
+#define RIGHT_LINE_SENSOR_PIN 21
+#define BARCODE_SENSOR_PIN 22
 
 #define TICKS_PER_MICROSECOND 1
-#define TIMEOUT_MICROSECONDS 5000000  // 5 seconds timeout
+#define TIMEOUT_MICROSECONDS 5000000 // 5 seconds timeout
 
 #define BARCODE_A "111010100010111"
 #define BARCODE_F "101110111000101"
@@ -96,24 +97,6 @@ void decode_barcode()
 
     // Clear the terminal
     // printf("\033[2J");
-}
-
-/**
- * @brief Function to initialize the infrared sensors
- *
- * Initialize the GPIO pins for the infrared sensors
- */
-void infrared_sensor_init()
-{
-    // Initialize GPIO pins
-    gpio_init(LEFT_LINE_SENSOR_PIN);
-    gpio_init(RIGHT_LINE_SENSOR_PIN);
-    gpio_init(BARCODE_SENSOR_PIN);
-
-    // Set GPIO pins to pull down
-    gpio_set_dir(LEFT_LINE_SENSOR_PIN, GPIO_IN);
-    gpio_set_dir(RIGHT_LINE_SENSOR_PIN, GPIO_IN);
-    gpio_set_dir(BARCODE_SENSOR_PIN, GPIO_IN);
 }
 
 /**
@@ -260,4 +243,22 @@ void get_line_sensor_value()
 {
     printf("Left Line Sensor: %s\n", line_check_left ? "true" : "false");
     printf("Right Line Sensor: %s\n", line_check_right ? "true" : "false");
+}
+
+/**
+ * @brief Function to initialize the infrared sensors
+ *
+ * Initialize the GPIO pins for the infrared sensors
+ */
+void infrared_sensor_init()
+{
+    // Initialize GPIO pins
+    gpio_init(LEFT_LINE_SENSOR_PIN);
+    gpio_init(RIGHT_LINE_SENSOR_PIN);
+    gpio_init(BARCODE_SENSOR_PIN);
+
+    // Set GPIO pins to pull down
+    gpio_set_dir(LEFT_LINE_SENSOR_PIN, GPIO_IN);
+    gpio_set_dir(RIGHT_LINE_SENSOR_PIN, GPIO_IN);
+    gpio_set_dir(BARCODE_SENSOR_PIN, GPIO_IN);
 }

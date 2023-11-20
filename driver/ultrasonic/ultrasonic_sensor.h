@@ -3,8 +3,8 @@
 #include "hardware/gpio.h" // Include the GPIO hardware library
 #include "hardware/timer.h" // Include the timer hardware library
 
-#define TRIGGER_PIN 15 // Define the GPIO pin for the ultrasonic sensor trigger
-#define ECHO_PIN 14 // Define the GPIO pin for the ultrasonic sensor echo
+#define TRIGGER_PIN 19 // Define the GPIO pin for the ultrasonic sensor trigger
+#define ECHO_PIN 18 // Define the GPIO pin for the ultrasonic sensor echo
 
 uint32_t pulse_start_time = 0; // Variable to store the start time of the echo pulse
 uint32_t pulse_end_time = 0; // Variable to store the end time of the echo pulse
