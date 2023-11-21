@@ -42,10 +42,6 @@ void on_echo_pin_change(uint gpio, uint32_t events)
     {
         pulse_end_time = time_us_32();                                      // Record the end time of the echo pulse
         pulse_received = checkPulseTimes(pulse_start_time, pulse_end_time); // Set the flag to indicate that the echo pulse has been received
-        if (pulse_received)
-        {
-            distance_from_car = calculateDistance(pulse_end_time - pulse_start_time); // Calculate the distance
-        }
     }
 }
 
@@ -55,16 +51,16 @@ void ultrasonic_init()
     gpio_init(ECHO_PIN);                 // Initialize the echo pin
     gpio_set_dir(TRIGGER_PIN, GPIO_OUT); // Set trigger pin as output
     gpio_set_dir(ECHO_PIN, GPIO_IN);     // Set echo pin as input
-    gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_handler);
+    // gpio_set_irq_enabled_with_callback(ECHO_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_handler);
     // Enable interrupt on both rising and falling edges of the echo pulse
 }
 
 uint32_t getPulseDuration()
 {
     pulse_received = false;       // Reset the pulse received flag
-    gpio_put(TRIGGER_PIN, true);  // Send a trigger pulse
+    gpio_put(TRIGGER_PIN, 1);  // Send a trigger pulse
     sleep_us(10);                 // Wait for 10 microseconds
-    gpio_put(TRIGGER_PIN, false); // Stop the trigger pulse
+    gpio_put(TRIGGER_PIN, 0); // Stop the trigger pulse
 
     // Wait for the echo pulse to be received or timeout after 1 second
     uint32_t timeout_start = time_us_32(); // Record the start time of the timeout
@@ -121,5 +117,6 @@ float calculateDistance(float pulse_duration)
 {
     // Speed of sound at sea level is approximately 343 meters per second or 34300 centimeters per second
     // Distance = (Speed of sound * Pulse duration) / 2
-    return (float)(pulse_duration * 34300) / (2 * 1000000); // Convert microseconds to seconds (10^6) and calculate distance in centimeters
+    // return (float)(pulse_duration * 34300) / (2 * 1000000); // Convert microseconds to seconds (10^6) and calculate distance in centimeters
+    return pulse_duration / 29 / 2;
 }

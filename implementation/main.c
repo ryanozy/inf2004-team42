@@ -142,7 +142,7 @@ bool getdistance()
     // Measure distance in centimeters
     float distance_cm = calculateDistance(pulse_duration);
     // Print the distance.
-    printf("Distance: %d cm\n", distance_cm);
+    printf("Distance: %f cm\n", distance_cm);
 
     return true;
 }
@@ -221,9 +221,9 @@ int main()
     while (1)
     {
         // The main loop
+        getdistance();
         cyw43_arch_poll(); // Poll for Wi-Fi driver or lwIP work
         sleep_ms(1000);
-        getdistance();
     }
 
     return 0;
