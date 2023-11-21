@@ -9,6 +9,8 @@
 #include "lwip/pbuf.h"
 #include "lwip/tcp.h"
 
+char strVal[50] = "";
+
 #include "infrared.h"
 #include "motor.h"
 #include "ultrasonic_sensor.h"
@@ -64,7 +66,8 @@ void check_dead_end()
     {
         printf("Dead end\n");
         stop_motor(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
-        move_forward_by_distance(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 5.0);
+        // move_forward_by_distance(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 5.0);
+        turn_left(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 80.0);
     }
     // else if (line_check_right == false && line_check_left == true)
     // {
@@ -137,7 +140,7 @@ bool getdistance()
 {
     uint32_t pulse_duration = measurePulse();
     // Measure distance in centimeters
-    uint32_t distance_cm = calculateDistanceCm(pulse_duration);
+    float distance_cm = calculateDistance(pulse_duration);
     // Print the distance.
     printf("Distance: %d cm\n", distance_cm);
 

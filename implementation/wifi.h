@@ -64,12 +64,14 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
                 buffer[0] = state->buffer_recv[i];
             }
         }
+
+        const char *ack_msg = strVal;
+        tcp_write(tpcb, ack_msg, strlen(ack_msg), 1);
         // Clear the buffer
         memset(state->buffer_recv, 0, BUF_SIZE);
 
         // Call motor function
         motor_control(buffer);
-
     }
     pbuf_free(p);
 
