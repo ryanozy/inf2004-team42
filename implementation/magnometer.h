@@ -62,10 +62,10 @@ float get_heading()
     heading = atan2(y, x) * 180.0 / M_PI;
 
     // Normalize to 0-360
-    // if (heading < 0)
-    // {
-    //     heading += 360;
-    // }
+    if (heading < 0)
+    {
+        heading += 360;
+    }
 
     return heading;
 }

@@ -5,6 +5,7 @@
 
 #define TRIGGER_PIN 19 // Define the GPIO pin for the ultrasonic sensor trigger
 #define ECHO_PIN 18    // Define the GPIO pin for the ultrasonic sensor echo
+#define TIMEOUT 26100
 
 uint32_t pulse_start_time = 0; // Variable to store the start time of the echo pulse
 uint32_t pulse_end_time = 0;   // Variable to store the end time of the echo pulse
@@ -58,29 +59,6 @@ void ultrasonic_init()
     // Enable interrupt on both rising and falling edges of the echo pulse
 }
 
-void shoot_pulse()
-{
-    pulse_received = false;       // Reset the pulse received flag
-    gpio_put(TRIGGER_PIN, true);  // Send a trigger pulse
-}
-
-void stop_pulse()
-{
-    gpio_put(TRIGGER_PIN, false); // Stop the trigger pulse
-}
-
-bool ultrasonic_sensor_handler()
-{
-    shoot_pulse();
-
-    if (pulse_received)
-    {
-        printf("Distance: %f\n", distance_from_car);
-    }
-
-    return true;
-}
-
 uint32_t getPulseDuration()
 {
     pulse_received = false;       // Reset the pulse received flag
@@ -96,6 +74,47 @@ uint32_t getPulseDuration()
     }
 
     return pulse_received ? pulse_end_time - pulse_start_time : 0.0;
+}
+
+// Measure the duration of the ultrasonic pulse and return in microseconds
+uint64_t measurePulse()
+{
+    // Activate the ultrasonice sensor by sending a brief HIGH signal (pulse) on the trigger pin 
+    gpio_put(TRIGGER_PIN, 1); // Set TRIGGER pin to HIGH
+    sleep_us(10);                  // Keep it High for 10 microseconds
+    gpio_put(TRIGGER_PIN, 0); // Set TRIGGER pin back to LOW
+
+    // Initialised the pulse width measurement variable
+    uint64_t pulse_width = 0;
+
+    // Wait for the ECHO pin to go HIGH, indicating the start of the ultrasonic pulse
+    while (gpio_get(ECHO_PIN) == 0) {
+        tight_loop_contents();
+    }
+    
+    //Record the start time
+    absolute_time_t startTime = get_absolute_time(); 
+
+    // Measure the duration of the ECHO pulse (high signal )
+    while (gpio_get(ECHO_PIN) == 1) 
+    {
+        // Increment the pulse width measurement
+        pulse_width++;
+
+        // Delay for 1 microsecond
+        sleep_us(1);
+
+        //
+        if (pulse_width > TIMEOUT) {
+            printf("Pulse Width, %lld\n", pulse_width);
+            return 0;
+        }
+    }
+    // Record the end time
+    absolute_time_t endTime = get_absolute_time();
+    
+    // Calculateand return the pulse duration in microseconds.
+    return absolute_time_diff_us(startTime, endTime);
 }
 
 float calculateDistance(float pulse_duration)

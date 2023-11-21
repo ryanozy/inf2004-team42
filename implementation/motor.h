@@ -24,6 +24,9 @@ bool turning_right = false;
 
 float degree_turned = 0;
 float degree_to_turn = 0;
+bool inching = false;
+double distance_after_blackline[2] = {0, 0};
+float distance_to_inch = 0;
 
 uint32_t time_of_prev_notch[2] = {0, 0};
 __long_double_t distance[2] = {0, 0};
@@ -110,19 +113,35 @@ void calculate_speed(uint32_t time_of_notch, int encoder_number)
         }
     }
 
-    else
-
-    if (time_of_prev_notch[index] == 0)
+    if (inching == true)
     {
-        time_of_prev_notch[index] = time_of_notch;
+
+        distance_after_blackline[index] += DISTANCE_BETWEEN_NOTCHES_CM;
+
+        if (distance_after_blackline[index] >= distance_to_inch)
+        {
+            inching = false;
+            distance_after_blackline[1] = 0;
+            distance_after_blackline[0] = 0;
+            stop_motor(14, 13, 12, 11);
+            turn_left(14, 13, 12, 11, 50.0);
+        }
     }
     else
     {
-        double time_between_notches_s = (time_of_notch - time_of_prev_notch[index]) / 1000000.0;
-        speed[index] = (DISTANCE_BETWEEN_NOTCHES_CM) / time_between_notches_s;
-        distance[index] += DISTANCE_BETWEEN_NOTCHES_CM;
 
-        time_of_prev_notch[index] = time_of_notch;
+        if (time_of_prev_notch[index] == 0)
+        {
+            time_of_prev_notch[index] = time_of_notch;
+        }
+        else
+        {
+            double time_between_notches_s = (time_of_notch - time_of_prev_notch[index]) / 1000000.0;
+            speed[index] = (DISTANCE_BETWEEN_NOTCHES_CM) / time_between_notches_s;
+            distance[index] += DISTANCE_BETWEEN_NOTCHES_CM;
+
+            time_of_prev_notch[index] = time_of_notch;
+        }
     }
 }
 
@@ -307,6 +326,15 @@ void turn_right(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int
     gpio_put(rightmotor_pin2, 0);
     turning_right = true;
     degree_to_turn = degree;
+}
+
+void move_forward_by_distance(int leftmotor_pin1, int leftmotor_pin2, int rightmotor_pin1, int rightmotor_pin2, float distance_cm)
+{
+    inching = true;
+    distance_after_blackline[0] = 0;
+    distance_after_blackline[1] = 0;
+    distance_to_inch = distance_cm;
+    move_forward(leftmotor_pin1, leftmotor_pin2, rightmotor_pin1, rightmotor_pin2);
 }
 
 /**

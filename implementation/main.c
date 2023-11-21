@@ -36,31 +36,23 @@ void motor_control(char recv_buffer[1])
 
     if (recv_buffer[0] == MOVE_FORWARD[0])
     {
-        printf("Moving forward\n");
         move_forward(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
         front_heading = get_heading();
-        if (front_heading < 0) {
-            front_heading = front_heading * -1.0;
-        }
     }
     else if (recv_buffer[0] == MOVE_BACKWARD[0])
     {
-        printf("Moving backward\n");
         move_backward(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
     }
     else if (recv_buffer[0] == TURN_LEFT[0])
     {
-        printf("Turning left\n");
         turn_left(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 80.0);
     }
     else if (recv_buffer[0] == TURN_RIGHT[0])
     {
-        printf("Turning right\n");
         turn_right(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 80.0);
     }
     else
     {
-        printf("Stopping\n");
         stop_motor(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
     }
 }
@@ -72,7 +64,7 @@ void check_dead_end()
     {
         printf("Dead end\n");
         stop_motor(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
-        turn_left(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 80.0);
+        move_forward_by_distance(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 5.0);
     }
     // else if (line_check_right == false && line_check_left == true)
     // {
@@ -116,7 +108,8 @@ bool get_new_heading()
 {
 
     float temp_heading = get_heading();
-    if (temp_heading < 0){
+    if (temp_heading < 0)
+    {
         temp_heading = temp_heading * -1.0;
     }
 
@@ -140,16 +133,13 @@ bool get_new_heading()
     return true;
 }
 
-bool shoot_sensor()
+bool getdistance()
 {
-    shoot_pulse();
-
-    return true;
-}
-
-bool stop_sensor()
-{
-    stop_pulse();
+    uint32_t pulse_duration = measurePulse();
+    // Measure distance in centimeters
+    uint32_t distance_cm = calculateDistanceCm(pulse_duration);
+    // Print the distance.
+    printf("Distance: %d cm\n", distance_cm);
 
     return true;
 }
@@ -216,10 +206,6 @@ int main()
     struct repeating_timer pidtimer;
     add_repeating_timer_ms(-20, &pid, NULL, &pidtimer);
 
-    // struct repeating_timer ultrasonictimer;
-    // add_repeating_timer_ms(-50, &shoot_sensor, NULL, &ultrasonictimer);
-    // add_repeating_timer_ms(20, &stop_sensor, NULL, &ultrasonictimer);
-
     struct repeating_timer getheading;
     add_repeating_timer_ms(-20, &get_new_heading, NULL, &getheading);
 
@@ -227,14 +213,14 @@ int main()
     add_repeating_timer_ms(1000, &clear_terminal, NULL, &terminaltimer);
 
     // move_forward(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+    stop_motor(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
 
     while (1)
     {
         // The main loop
         cyw43_arch_poll(); // Poll for Wi-Fi driver or lwIP work
-        // float heading = get_heading();
-        // printf("Heading: %f\n", heading);
-        // sleep_ms(50);
+        sleep_ms(1000);
+        getdistance();
     }
 
     return 0;
