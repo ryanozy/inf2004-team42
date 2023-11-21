@@ -66,23 +66,35 @@ void check_dead_end()
     {
         printf("Dead end\n");
         stop_motor(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+        int delay = time_us_32();
+        while (time_us_32() - delay < 2000000) // 2 seconds
+        {
+            printf("Stopping\n");
+        }
         // move_forward_by_distance(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 5.0);
-        turn_left(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 80.0);
+        turn_right(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 80.0);
+        delay = time_us_32();
+        while (time_us_32() - delay < 2000000) // 2 seconds
+        {
+            printf("Stopping\n");
+        }
+        front_heading = get_heading();
+        move_forward(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
     }
     // else if (line_check_right == false && line_check_left == true)
     // {
-    //     left_desired_speed_cm_s = 35;
-    //     right_desired_speed_cm_s = 30;
+    //     pwm_set_gpio_level(RIGHT_MOTOR_PWM_PIN, 12500 / 3.5);
+    //     pwm_set_gpio_level(LEFT_MOTOR_PWM_PIN, 12500 / 2.3);
     // }
     // else if (line_check_right == true && line_check_left == false)
     // {
-    //     right_desired_speed_cm_s = 35;
-    //     left_desired_speed_cm_s = 30;
+    //     pwm_set_gpio_level(RIGHT_MOTOR_PWM_PIN, 12500 / 3);
+    //     pwm_set_gpio_level(LEFT_MOTOR_PWM_PIN, 12500 / 3);
     // }
     // else if (line_check_left == false && line_check_right == false)
     // {
-    //     left_desired_speed_cm_s = 30;
-    //     right_desired_speed_cm_s = 30;
+    //     pwm_set_gpio_level(RIGHT_MOTOR_PWM_PIN, 12500 / 3.5);
+    //     pwm_set_gpio_level(LEFT_MOTOR_PWM_PIN, 12500 / 3);
     // }
 }
 
@@ -111,32 +123,28 @@ bool get_new_heading()
 {
 
     float temp_heading = get_heading();
-    if (temp_heading < 0)
-    {
-        temp_heading = temp_heading * -1.0;
-    }
 
-    if ((temp_heading - front_heading) > 0.2)
+    if ((temp_heading - front_heading) > 1)
     {
-        right_desired_speed_cm_s = 30;
-        left_desired_speed_cm_s = 35;
+        pwm_set_gpio_level(RIGHT_MOTOR_PWM_PIN, 12500 / 3);
+        pwm_set_gpio_level(LEFT_MOTOR_PWM_PIN, 12500 / 3);
     }
-    else if ((temp_heading - front_heading) < -0.2)
+    else if ((temp_heading - front_heading) < -1)
     {
 
-        left_desired_speed_cm_s = 35;
-        right_desired_speed_cm_s = 30;
+        pwm_set_gpio_level(RIGHT_MOTOR_PWM_PIN, 12500 / 3.5);
+        pwm_set_gpio_level(LEFT_MOTOR_PWM_PIN, 12500 / 2.3);
     }
     else
     {
-        right_desired_speed_cm_s = 30;
-        left_desired_speed_cm_s = 30;
+        pwm_set_gpio_level(RIGHT_MOTOR_PWM_PIN, 12500 / 3.5);
+        pwm_set_gpio_level(LEFT_MOTOR_PWM_PIN, 12500 / 3);
     }
 
     return true;
 }
 
-bool getdistance()
+uint16_t getdistance()
 {
     uint32_t pulse_duration = measurePulse();
     // Measure distance in centimeters
@@ -144,7 +152,7 @@ bool getdistance()
     // Print the distance.
     printf("Distance: %f cm\n", distance_cm);
 
-    return true;
+    return distance_cm;
 }
 
 bool clear_terminal()
@@ -206,8 +214,8 @@ int main()
     struct repeating_timer speedtimer;
     add_repeating_timer_ms(-20, &check_wheel_moving, NULL, &speedtimer);
 
-    struct repeating_timer pidtimer;
-    add_repeating_timer_ms(-20, &pid, NULL, &pidtimer);
+    // struct repeating_timer pidtimer;
+    // add_repeating_timer_ms(-20, &pid, NULL, &pidtimer);
 
     struct repeating_timer getheading;
     add_repeating_timer_ms(-20, &get_new_heading, NULL, &getheading);
@@ -221,7 +229,12 @@ int main()
     while (1)
     {
         // The main loop
-        getdistance();
+        uint16_t distance_towall = getdistance();
+        if (distance_towall < 10)
+        {
+            stop_motor(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2);
+            turn_right(LEFT_MOTOR_PIN1, LEFT_MOTOR_PIN2, RIGHT_MOTOR_PIN1, RIGHT_MOTOR_PIN2, 160.0);
+        }
         cyw43_arch_poll(); // Poll for Wi-Fi driver or lwIP work
         sleep_ms(1000);
     }
