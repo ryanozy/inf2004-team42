@@ -29,7 +29,10 @@
 ![block_diagram](./team42-blockdiagram.png)
 
 ## Flowchart:
-![flowchart](./embeded_flowchart_dataflow.png)
+![flowchart](./embeded_flowchart.png)
+
+## Data flow diagram:
+![Data flow](./embeded_dataflow.png)
 
 ## How to Clone Repo:
 Setting up the environment:
