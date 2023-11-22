@@ -22,7 +22,7 @@
 ## Thing to do:
 - [x] Create a repo
 - [x] Create Driver Files
-- [x] Create Partial Integration Files in # Implementation Branch
+- [x] Create Partial Integration Files in **Implementation Branch**
 - [ ] Create Navigation and Mapping
 
 ## Block Diagram:
