@@ -4,85 +4,6 @@
 #include "hardware/pwm.h"
 #include "motor.h"
 
-#define ENCODEROUT_PIN 2
-#define ENCODEROUT_PIN2 3
-#define DISTANCE_BETWEEN_NOTCHES_CM 1.0525
-
-uint32_t time_of_prev_notch[2] = {0, 0};
-__long_double_t distance[2] = {0, 0};
-double speed[2] = {0, 0};
-__long_double_t prev_distance[2] = {0, 0};
-
-void calculate_speed(uint32_t time_of_notch, int encoder_number);
-void gpio_callback(uint gpio, uint32_t events);
-bool check_wheel_moving(struct repeating_timer *t);
-
-/**
- * @brief Main function to calculate speed of wheels.
- * 
- * This function is called on a interrupt when the encoder notch is detected. (Rising Edge)
- * It calculates the speed of the wheel and distance travelled, updating the global variables.
- */
-void calculate_speed(uint32_t time_of_notch, int encoder_number)
-{
-    // If Encoder Pin is 2, index is 0
-    // If Encoder Pin is 3, index is 1
-    int index = encoder_number == ENCODEROUT_PIN ? 0 : 1;
-
-    if (time_of_prev_notch[index] == 0)
-    {
-        time_of_prev_notch[index] = time_of_notch;
-    }
-    else
-    {
-        double time_between_notches_s = (time_of_notch - time_of_prev_notch[index]) / 1000000.0;
-        speed[index] = (DISTANCE_BETWEEN_NOTCHES_CM) / time_between_notches_s;
-        distance[index] += DISTANCE_BETWEEN_NOTCHES_CM;
-
-        time_of_prev_notch[index] = time_of_notch;
-    }
-}
-
-/**
- * @brief Callback function for GPIO interrupts.
- * 
- * Called when the encoder notch is detected. (Rising Edge)
- * Calls calculate_speed() to calculate the speed of the wheel and pass the time of the notch.
- */
-void gpio_callback(uint gpio, uint32_t events)
-{
-    if ((gpio == ENCODEROUT_PIN || gpio == ENCODEROUT_PIN2) && events == GPIO_IRQ_EDGE_RISE)
-    {
-        calculate_speed(time_us_32(), gpio);
-    }
-}
-
-/**
- * @brief Check if wheel is moving.
- * 
- * This function is called every 50ms to check if the wheel is moving.
- * If the wheel is not moving, the speed is set to 0.
- * 
- */
-bool check_wheel_moving(struct repeating_timer *t)
-{
-    // Check if distance not changed
-    if (prev_distance[0] == distance[0])
-    {
-        speed[0] = 0.0;
-    }
-
-    if (prev_distance[1] == distance[1])
-    {
-        speed[1] = 0.0;
-    }
-
-    prev_distance[0] = distance[0];
-    prev_distance[1] = distance[1];
-
-    return true;
-}
-
 int main()
 {
     stdio_init_all();
@@ -115,7 +36,28 @@ int main()
     {
         printf("Left Motor Speed: %lfcm/s\nRight Motor Speed: %lfcm/s\n", speed[0], speed[1]);
 
-        sleep_ms(300);
+        sleep_ms(1000);
+
+        move_backward(14, 13, 12, 11);
+
+        sleep_ms(1000);
+
+        turn_left(14, 13, 12, 11);
+
+        sleep_ms(1000);
+
+        turn_right(14, 13, 12, 11);
+
+        sleep_ms(1000);
+
+        move_forward(14, 13, 12, 11);
+        
+        // For Loop for the speed control
+        for (int i = 0; i < 10; i++)
+        {
+            set_speed(i * 10, 15, 10);
+            sleep_ms(1000);
+        }
 
         // Clear screen
         printf("\033[2J");

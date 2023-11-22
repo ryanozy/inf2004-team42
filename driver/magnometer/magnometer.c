@@ -26,5 +26,10 @@ int main()
         
         // Free the memory allocated by malloc
         free(raw_data);
+
+        sleep_ms(50);
+
+        // Clear the screen
+        printf("\033[2J");
     }
 }

@@ -56,7 +56,8 @@ int main()
         int16_t zMag = (mag_data[2] << 8) | mag_data[3];
         int16_t yMag = (mag_data[4] << 8) | mag_data[5];
 
-        float heading = atan2(yMag, xMag) * 180 / M_PI;
+
+        float heading = atan2(yMag, xMag) * 180.0 / M_PI;
 
         // normalize to 0-360
         if (heading < 0)
