@@ -31,11 +31,15 @@ const static char *TURN_LEFT = "a";
 const static char *TURN_RIGHT = "d";
 const static char *STOP = "x";
 
-struct repeating_timer speedtimer;
-struct repeating_timer pidtimer;
-struct repeating_timer getheading;
-
 double front_heading = 0.0;
+
+struct repeating_timer left_cool_down_timer;
+struct repeating_timer right_cool_down_timer;
+uint32_t left_cool_down_time = 0;
+uint32_t right_cool_down_time = 0;
+
+bool reset_left_encoder_cool_down(struct repeating_timer *t);
+bool reset_right_encoder_cool_down(struct repeating_timer *t);
 
 // Function is created in the wifi.h file and is used to control the vehicle
 void motor_control(char *recv_buffer)
@@ -80,11 +84,9 @@ void interrupt_handler(uint gpio, uint32_t events)
     printf("Interrupt triggered\n");
     printf("GPIO: %d, Events: %d\n", gpio, events);
 
-    // Check if there is any command from the server
-    cyw43_arch_poll(); // Poll for Wi-Fi driver or lwIP work
-
-    if (gpio == ENCODER_LEFT_PIN)
+    if (gpio == ENCODER_LEFT_PIN && time_us_32() - left_cool_down_time > 100000)
     {
+        left_cool_down_time = time_us_32();
         if (events == GPIO_IRQ_EDGE_RISE)
         {
             left_encoder_count++;
@@ -93,11 +95,13 @@ void interrupt_handler(uint gpio, uint32_t events)
         {
             left_encoder_count--;
         }
-        printf("Left encoder count: %d\n", left_encoder_count);
+        gpio_set_irq_enabled_with_callback(ENCODER_LEFT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
+        add_repeating_timer_ms(100, reset_left_encoder_cool_down, NULL, &left_cool_down_timer);
     }
-    
-    if (gpio == ENCODER_RIGHT_PIN)
+
+    if (gpio == ENCODER_RIGHT_PIN && time_us_32() - right_cool_down_time > 100000)
     {
+        right_cool_down_time = time_us_32();
         if (events == GPIO_IRQ_EDGE_RISE)
         {
             right_encoder_count++;
@@ -107,8 +111,10 @@ void interrupt_handler(uint gpio, uint32_t events)
             right_encoder_count--;
         }
         printf("Right encoder count: %d\n", right_encoder_count);
+        gpio_set_irq_enabled_with_callback(ENCODER_RIGHT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
+        add_repeating_timer_ms(100, reset_right_encoder_cool_down, NULL, &right_cool_down_timer);
     }
-    
+
     if (gpio == LEFT_LINE_SENSOR_PIN)
     {
         if (events == GPIO_IRQ_EDGE_RISE)
@@ -120,7 +126,7 @@ void interrupt_handler(uint gpio, uint32_t events)
             printf("Left line sensor white\n");
         }
     }
-    
+
     if (gpio == RIGHT_LINE_SENSOR_PIN)
     {
         if (events == GPIO_IRQ_EDGE_RISE)
@@ -132,7 +138,7 @@ void interrupt_handler(uint gpio, uint32_t events)
             printf("Right line sensor white\n");
         }
     }
-    
+
     if (gpio == BARCODE_SENSOR_PIN)
     {
         if (events == GPIO_IRQ_EDGE_RISE)
@@ -144,6 +150,21 @@ void interrupt_handler(uint gpio, uint32_t events)
             printf("Barcode sensor white\n");
         }
     }
+}
+
+bool reset_left_encoder_cool_down(struct repeating_timer *t)
+{
+    gpio_set_irq_enabled_with_callback(ENCODER_LEFT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_handler);
+    // disable the timer
+    cancel_repeating_timer(t);
+    return true;
+}
+
+bool reset_right_encoder_cool_down(struct repeating_timer *t)
+{
+    gpio_set_irq_enabled_with_callback(ENCODER_RIGHT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_handler);
+    cancel_repeating_timer(t);
+    return true;
 }
 
 bool check_wifi_status(struct repeating_timer *t)
@@ -175,8 +196,9 @@ int main()
     gpio_set_irq_enabled_with_callback(ENCODER_LEFT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_handler);
     gpio_set_irq_enabled_with_callback(ENCODER_RIGHT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_handler);
 
+    // Configure the repeating timer to poll the Wi-Fi driver
     struct repeating_timer check_wifi;
-    add_repeating_timer_ms(-1000, check_wifi_status, NULL, &check_wifi);
+    add_repeating_timer_ms(-500, check_wifi_status, NULL, &check_wifi);
 
     while (1)
     {
