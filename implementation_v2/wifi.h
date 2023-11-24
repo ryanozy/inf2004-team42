@@ -77,6 +77,8 @@ err_t tcp_server_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err
 
         // Call motor function
         motor_control(buffer);
+
+        
     }
     pbuf_free(p);
 
@@ -207,7 +209,7 @@ int wifi_init()
     return 0;
 }
 
-int wifi_main()
+int start_wifi()
 {
 
     // Initialize the Wi-Fi driver

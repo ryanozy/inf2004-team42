@@ -8,9 +8,7 @@
 #include "pico/time.h"
 
 // Define GPIO pins for infrared sensor
-#define LEFT_LINE_SENSOR_PIN 20
-#define RIGHT_LINE_SENSOR_PIN 21
-#define BARCODE_SENSOR_PIN 22
+
 
 #define TICKS_PER_MICROSECOND 1
 #define TIMEOUT_MICROSECONDS 5000000 // 5 seconds timeout
@@ -31,13 +29,16 @@ bool barcode_started = false;
 bool barcode_ended = false;
 char barcode_string[27] = {0};
 
+uint8_t left_sensor_pin = 20;
+uint8_t right_sensor_pin = 21;
+uint8_t barcode_sensor_pin = 22;
+
 // Function prototypes
-void infrared_sensor_init();
+void init_infrared(int8_t left_line_sensor_pin, int8_t right_line_sensor_pin, int8_t barcode_sensor_pin);
 void measure_barcode(char color[]);
 void barcode_sensor_handler(uint gpio, uint32_t events);
-void line_sensor_handler(uint gpio, uint32_t events);
-void get_line_sensor_value();
 void decode_barcode();
+bool is_line_sensor_triggered(int8_t line_sensor_pin);
 
 #endif // INFRARED_H
 
@@ -205,7 +206,7 @@ void measure_barcode(char color[])
  */
 void barcode_sensor_handler(uint gpio, uint32_t events)
 {
-    if (events == GPIO_IRQ_EDGE_RISE && gpio == BARCODE_SENSOR_PIN)
+    if (events == GPIO_IRQ_EDGE_RISE && gpio == barcode_sensor_pin)
     {
         start_time_barcode_black = time_us_32();
         stop_time_barcode_white = time_us_32();
@@ -217,7 +218,7 @@ void barcode_sensor_handler(uint gpio, uint32_t events)
 
         measure_barcode("white");
     }
-    else if (events == GPIO_IRQ_EDGE_FALL && gpio == BARCODE_SENSOR_PIN)
+    else if (events == GPIO_IRQ_EDGE_FALL && gpio == barcode_sensor_pin)
     {
         start_time_barcode_white = time_us_32();
         stop_time_barcode_black = time_us_32();
@@ -226,58 +227,33 @@ void barcode_sensor_handler(uint gpio, uint32_t events)
     }
 }
 
-/**
- * @brief Line Sensor Interrupt Handler
- *
- * If events is GPIO_IRQ_EDGE_RISE, then the line is black
- * If events is GPIO_IRQ_EDGE_FALL, then the line is white
- * Update the line_check_left and line_check_right variables
- */
-void line_sensor_handler(uint gpio, uint32_t events)
+bool on_trigger_handler(uint gpio)
 {
-    if (events == GPIO_IRQ_EDGE_RISE && gpio == RIGHT_LINE_SENSOR_PIN)
-    {
-        line_check_right = true;
-    }
-    else if (events == GPIO_IRQ_EDGE_RISE && gpio == LEFT_LINE_SENSOR_PIN)
-    {
-        line_check_left = true;
-    }
-    else if (events == GPIO_IRQ_EDGE_FALL && gpio == RIGHT_LINE_SENSOR_PIN)
-    {
-        line_check_right = false;
-    }
-    else if (events == GPIO_IRQ_EDGE_FALL && gpio == LEFT_LINE_SENSOR_PIN)
-    {
-        line_check_left = false;
-    }
+    printf("Triggered\n");
+    printf("GPIO: %d\n", gpio);
+    return true;
 }
 
-/**
- * @brief Get the line sensor value
- *
- * Print the line sensor value
- */
-void get_line_sensor_value()
-{
-    printf("Left Line Sensor: %s\n", line_check_left ? "true" : "false");
-    printf("Right Line Sensor: %s\n", line_check_right ? "true" : "false");
-}
 
 /**
  * @brief Function to initialize the infrared sensors
  *
  * Initialize the GPIO pins for the infrared sensors
  */
-void infrared_sensor_init()
+void init_infrared(int8_t left_line_sensor_pin, int8_t right_line_sensor_pin, int8_t barcode_sensor_pin)
 {
+    // Set the GPIO pins
+    left_sensor_pin = left_line_sensor_pin;
+    right_sensor_pin = right_line_sensor_pin;
+    barcode_sensor_pin = barcode_sensor_pin;
+
     // Initialize GPIO pins
-    gpio_init(LEFT_LINE_SENSOR_PIN);
-    gpio_init(RIGHT_LINE_SENSOR_PIN);
-    gpio_init(BARCODE_SENSOR_PIN);
+    gpio_init(left_line_sensor_pin);
+    gpio_init(right_line_sensor_pin);
+    gpio_init(barcode_sensor_pin);
 
     // Set GPIO pins to pull down
-    gpio_set_dir(LEFT_LINE_SENSOR_PIN, GPIO_IN);
-    gpio_set_dir(RIGHT_LINE_SENSOR_PIN, GPIO_IN);
-    gpio_set_dir(BARCODE_SENSOR_PIN, GPIO_IN);
+    gpio_set_dir(left_line_sensor_pin, GPIO_IN);
+    gpio_set_dir(right_line_sensor_pin, GPIO_IN);
+    gpio_set_dir(barcode_sensor_pin, GPIO_IN);
 }

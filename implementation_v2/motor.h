@@ -1,3 +1,4 @@
+#ifndef MOTOR_H
 #define MOTOR_H
 
 #include "pico/stdlib.h"
@@ -28,6 +29,8 @@ void turn_right(float speed, float angle);
 void stop_motors();
 void init_motors(uint8_t left_motor_pin1, uint8_t left_motor_pin2, uint8_t right_motor_pin1, uint8_t right_motor_pin2, uint8_t left_motor_pwm_pin, uint8_t right_motor_pwm_pin, uint8_t encoder_left_pin, uint8_t encoder_right_pin);
 uint16_t *get_encoder_data();
+
+#endif // MOTOR_H
 
 void set_speed(float left_motor_speed, float right_motor_speed)
 {
@@ -181,7 +184,4 @@ void init_motors(uint8_t left_motor_pin1, uint8_t left_motor_pin2, uint8_t right
     pwm_set_enabled(slice_A, false);
     pwm_set_enabled(slice_B, false);
 
-    // Configure left and right encoder pins
-    gpio_pull_up(left_encoder_pin);
-    gpio_pull_up(right_encoder_pin);    
 }
