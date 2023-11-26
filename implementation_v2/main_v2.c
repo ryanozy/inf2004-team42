@@ -33,13 +33,23 @@ const static char *STOP = "x";
 
 double front_heading = 0.0;
 
-struct repeating_timer left_cool_down_timer;
-struct repeating_timer right_cool_down_timer;
-uint32_t left_cool_down_time = 0;
-uint32_t right_cool_down_time = 0;
+struct repeating_timer left_encoder_cool_down_timer;
+struct repeating_timer right_encoder_cool_down_timer;
+struct repeating_timer left_infrared_cool_down_timer;
+struct repeating_timer right_infrared_cool_down_timer;
+
+
+volatile uint32_t left_last_pulse_time = 0;
+volatile uint32_t right_last_pulse_time = 0;
+
+bool left_line_tiggered = false;
+bool right_line_tiggered = false;
 
 bool reset_left_encoder_cool_down(struct repeating_timer *t);
 bool reset_right_encoder_cool_down(struct repeating_timer *t);
+bool reset_left_infrared_cool_down(struct repeating_timer *t);
+bool reset_right_infrared_cool_down(struct repeating_timer *t);
+
 
 // Function is created in the wifi.h file and is used to control the vehicle
 void motor_control(char *recv_buffer)
@@ -81,62 +91,80 @@ void motor_control(char *recv_buffer)
 // Cannot use else if because the interrupts are not mutually exclusive
 void interrupt_handler(uint gpio, uint32_t events)
 {
-    printf("Interrupt triggered\n");
-    printf("GPIO: %d, Events: %d\n", gpio, events);
-
-    if (gpio == ENCODER_LEFT_PIN && time_us_32() - left_cool_down_time > 100000)
+    if (gpio == ENCODER_LEFT_PIN)
     {
-        left_cool_down_time = time_us_32();
+        //TODO: MOVE CODE OVER TO motor.h
+        // Left encoder triggered time
+        uint32_t current_time = time_us_32();
+        uint32_t time_since_last_pulse = current_time - left_last_pulse_time;
+
         if (events == GPIO_IRQ_EDGE_RISE)
         {
             left_encoder_count++;
         }
-        else if (events == GPIO_IRQ_EDGE_FALL)
+
+        if (time_since_last_pulse != 0)
         {
-            left_encoder_count--;
+            left_encoder_speed = 1000000.0 / time_since_last_pulse;
         }
+
+        left_last_pulse_time = current_time;
+
+        // Disable the interrupt for 100ms to prevent multiple interrupts from being triggered
         gpio_set_irq_enabled_with_callback(ENCODER_LEFT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
-        add_repeating_timer_ms(100, reset_left_encoder_cool_down, NULL, &left_cool_down_timer);
+        add_repeating_timer_ms(200, reset_left_encoder_cool_down, NULL, &left_encoder_cool_down_timer); 
     }
 
-    if (gpio == ENCODER_RIGHT_PIN && time_us_32() - right_cool_down_time > 100000)
+    if (gpio == ENCODER_RIGHT_PIN)
     {
-        right_cool_down_time = time_us_32();
+        // Right encoder triggered time
+        uint32_t current_time = time_us_32();
+        uint32_t time_since_last_pulse = current_time - right_last_pulse_time;
+
         if (events == GPIO_IRQ_EDGE_RISE)
         {
             right_encoder_count++;
         }
-        else if (events == GPIO_IRQ_EDGE_FALL)
+
+        if (time_since_last_pulse != 0)
         {
-            right_encoder_count--;
+            right_encoder_speed = 1000000.0 / time_since_last_pulse; 
         }
-        printf("Right encoder count: %d\n", right_encoder_count);
+
+        right_last_pulse_time = current_time;
+
+        // Disable the interrupt for 100ms to prevent multiple interrupts from being triggered
         gpio_set_irq_enabled_with_callback(ENCODER_RIGHT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
-        add_repeating_timer_ms(100, reset_right_encoder_cool_down, NULL, &right_cool_down_timer);
+        add_repeating_timer_ms(200, reset_right_encoder_cool_down, NULL, &right_encoder_cool_down_timer);
     }
 
     if (gpio == LEFT_LINE_SENSOR_PIN)
     {
         if (events == GPIO_IRQ_EDGE_RISE)
         {
-            printf("Left line sensor black\n");
+            // printf("Left line sensor black\n");
+            left_line_tiggered = true;
         }
-        else if (events == GPIO_IRQ_EDGE_FALL)
-        {
-            printf("Left line sensor white\n");
-        }
+
+        // Disable the interrupt for 100ms to prevent multiple interrupts from being triggered
+        gpio_set_irq_enabled_with_callback(LEFT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
+        add_repeating_timer_ms(200, reset_left_infrared_cool_down, NULL, &left_infrared_cool_down_timer);
     }
 
     if (gpio == RIGHT_LINE_SENSOR_PIN)
     {
         if (events == GPIO_IRQ_EDGE_RISE)
         {
-            printf("Right line sensor black\n");
+            right_line_tiggered = true;
         }
         else if (events == GPIO_IRQ_EDGE_FALL)
         {
-            printf("Right line sensor white\n");
+            right_line_tiggered = false;
         }
+
+        // Disable the interrupt for 100ms to prevent multiple interrupts from being triggered
+        gpio_set_irq_enabled_with_callback(RIGHT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
+        add_repeating_timer_ms(200, reset_right_infrared_cool_down, NULL, &right_infrared_cool_down_timer);
     }
 
     if (gpio == BARCODE_SENSOR_PIN)
@@ -145,10 +173,12 @@ void interrupt_handler(uint gpio, uint32_t events)
         {
             printf("Barcode sensor black\n");
         }
-        else if (events == GPIO_IRQ_EDGE_FALL)
-        {
-            printf("Barcode sensor white\n");
-        }
+    }
+
+    if (left_line_tiggered && right_line_tiggered)
+    {
+        printf("Both line sensors triggered\n");
+        stop_motors();
     }
 }
 
@@ -163,6 +193,20 @@ bool reset_left_encoder_cool_down(struct repeating_timer *t)
 bool reset_right_encoder_cool_down(struct repeating_timer *t)
 {
     gpio_set_irq_enabled_with_callback(ENCODER_RIGHT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_handler);
+    cancel_repeating_timer(t);
+    return true;
+}
+
+bool reset_left_infrared_cool_down(struct repeating_timer *t)
+{
+    gpio_set_irq_enabled_with_callback(LEFT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_handler);
+    cancel_repeating_timer(t);
+    return true;
+}
+
+bool reset_right_infrared_cool_down(struct repeating_timer *t)
+{
+    gpio_set_irq_enabled_with_callback(RIGHT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, true, &interrupt_handler);
     cancel_repeating_timer(t);
     return true;
 }
@@ -200,10 +244,15 @@ int main()
     struct repeating_timer check_wifi;
     add_repeating_timer_ms(-500, check_wifi_status, NULL, &check_wifi);
 
+    struct repeating_timer pid_timer;
+    add_repeating_timer_ms(100, pid_control, NULL, &pid_timer);
+
     while (1)
     {
         // DO NOTHING
         tight_loop_contents();
+
+        // TODO: Mapping algorithm
     }
 
     return 0;
