@@ -59,22 +59,22 @@ void motor_control(char *recv_buffer)
     if (recv_buffer[0] == MOVE_FORWARD[0])
     {
         printf("Moving forward\n");
-        move_forward(5000);
+        move_forward(6250); 
     }
     else if (recv_buffer[0] == MOVE_BACKWARD[0])
     {
         printf("Moving backward\n");
-        move_backward(5000);
+        move_backward(6250);
     }
     else if (recv_buffer[0] == TURN_LEFT[0])
     {
         printf("Turning left\n");
-        turn_left(5000, 90);
+        turn_left(6250, 90);
     }
     else if (recv_buffer[0] == TURN_RIGHT[0])
     {
         printf("Turning right\n");
-        turn_right(5000, 90);
+        turn_right(6250, 90);
     }
     else if (recv_buffer[0] == STOP[0])
     {
@@ -108,12 +108,6 @@ void interrupt_handler(uint gpio, uint32_t events)
             left_encoder_speed = 1000000.0 / time_since_last_pulse;
         }
 
-        float degrees_turned = left_encoder_count * 4.6;
-
-        if (degrees_turned > set_heading && movement_direction == 'a')
-        {
-            stop_motors();
-        }
         left_last_pulse_time = current_time;
 
         // Disable the interrupt for 100ms to prevent multiple interrupts from being triggered
@@ -137,7 +131,6 @@ void interrupt_handler(uint gpio, uint32_t events)
             right_encoder_speed = 1000000.0 / time_since_last_pulse; 
         }
 
-<<<<<<< HEAD
         float degrees_turned = right_encoder_count * 4.6;
 
         if (degrees_turned > set_heading && movement_direction == 'd')
@@ -145,13 +138,11 @@ void interrupt_handler(uint gpio, uint32_t events)
             stop_motors();
         }
 
-=======
->>>>>>> parent of b095b9f (Some nodes)
         right_last_pulse_time = current_time;
 
         // Disable the interrupt for 100ms to prevent multiple interrupts from being triggered
         gpio_set_irq_enabled_with_callback(ENCODER_RIGHT_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
-        add_repeating_timer_ms(100, reset_right_encoder_cool_down, NULL, &right_encoder_cool_down_timer);
+        add_repeating_timer_ms(200, reset_right_encoder_cool_down, NULL, &right_encoder_cool_down_timer);
     }
 
     if (gpio == LEFT_LINE_SENSOR_PIN)
@@ -163,13 +154,12 @@ void interrupt_handler(uint gpio, uint32_t events)
         }
         else if (events == GPIO_IRQ_EDGE_FALL)
         {
-            // printf("Left line sensor white\n");
             left_line_tiggered = false;
         }
 
         // Disable the interrupt for 100ms to prevent multiple interrupts from being triggered
         gpio_set_irq_enabled_with_callback(LEFT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
-        add_repeating_timer_ms(100, reset_left_infrared_cool_down, NULL, &left_infrared_cool_down_timer);
+        add_repeating_timer_ms(200, reset_left_infrared_cool_down, NULL, &left_infrared_cool_down_timer);
     }
 
     if (gpio == RIGHT_LINE_SENSOR_PIN)
@@ -200,7 +190,6 @@ void interrupt_handler(uint gpio, uint32_t events)
     {
         printf("Both line sensors triggered\n");
         stop_motors();
-        
     }
 }
 
@@ -267,7 +256,7 @@ int main()
     add_repeating_timer_ms(-500, check_wifi_status, NULL, &check_wifi);
 
     struct repeating_timer pid_timer;
-    add_repeating_timer_ms(-5, pid_control, NULL, &pid_timer);
+    add_repeating_timer_ms(50, pid_control, NULL, &pid_timer);
 
     while (1)
     {

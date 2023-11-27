@@ -46,7 +46,7 @@ float I = 0.0;   // Integral term
 float P = 0.0;   // Proportional term
 float D = 0.0;   // Derivative term
 
-#define SPEED 5000
+#define SPEED 6250
 #endif // MOTOR_H
 
 void set_speed(float left_motor_speed, float right_motor_speed)
@@ -58,7 +58,16 @@ void set_speed(float left_motor_speed, float right_motor_speed)
 
 float calculate_new_heading(float current_heading, float angle, bool is_left_turn)
 {
-    if (is_left_turn)
+    if (!is_left_turn)
+    {
+        float new_heading = current_heading + angle;
+        if (new_heading > 360)
+        {
+            new_heading = new_heading - 360;
+        }
+        return new_heading;
+    }
+    else
     {
         float new_heading = current_heading - angle;
         if (new_heading < 0)
@@ -66,13 +75,6 @@ float calculate_new_heading(float current_heading, float angle, bool is_left_tur
             new_heading = 360 + new_heading;
         }
         return new_heading;
-    }else{
-        float new_heading = current_heading + angle;
-        if (new_heading > 360)
-        {
-            new_heading = new_heading - 360;
-        }
-        return new_heading;   
     }
 }
 
@@ -84,7 +86,7 @@ bool pid_control()
         current_heading = get_heading();
 
         // Calculate the error
-        float error = target_heading - current_heading;
+        float error = 0;
         float left_wheel_speed = left_encoder_speed;
         float right_wheel_speed = right_encoder_speed;
         float wheel_speed_error = left_wheel_speed - right_wheel_speed;
@@ -105,7 +107,7 @@ bool pid_control()
         if (PID > 0)
         {
             // Turn left
-            float left_motor_speed = SPEED + PID * 2;
+            float left_motor_speed = SPEED + PID;
             float right_motor_speed = SPEED;
 
             set_speed(left_motor_speed, right_motor_speed);
@@ -115,7 +117,7 @@ bool pid_control()
             // change pid to positive
             PID = fabs(PID);
             float left_motor_speed = SPEED;
-            float right_motor_speed = SPEED + PID * 2;
+            float right_motor_speed = SPEED + PID;
 
             set_speed(left_motor_speed, right_motor_speed);
         }
@@ -133,7 +135,7 @@ bool pid_control()
         current_heading = get_heading();
 
         // Calculate the error
-        float error = target_heading - current_heading;
+        float error = 0;
         float left_wheel_speed = left_encoder_speed;
         float right_wheel_speed = right_encoder_speed;
         float wheel_speed_error = left_wheel_speed - right_wheel_speed;
@@ -154,7 +156,7 @@ bool pid_control()
         if (PID < 0)
         {
             // Turn left
-            float left_motor_speed = SPEED + PID * 2;
+            float left_motor_speed = SPEED + PID;
             float right_motor_speed = SPEED;
 
             set_speed(left_motor_speed, right_motor_speed);
@@ -164,7 +166,8 @@ bool pid_control()
             // change pid to positive
             PID = fabs(PID);
             float left_motor_speed = SPEED;
-            float right_motor_speed = SPEED + PID * 2;
+            float right_motor_speed = SPEED + PID;
+
             set_speed(left_motor_speed, right_motor_speed);
         }
         else
@@ -175,12 +178,13 @@ bool pid_control()
 
         return true;
     }
-<<<<<<< HEAD
     else if (movement_direction == 'a')
     {
         // Get current heading
         current_heading = get_heading();
-        // Angle per step
+
+        // Calculate the error
+        // float error = target_heading - current_heading;
         float error = 0;
         float left_wheel_speed = left_encoder_speed;
         float right_wheel_speed = right_encoder_speed;
@@ -193,12 +197,14 @@ bool pid_control()
 
         float PID = P + I + D;
 
-        printf("Current Heading: %f\n", current_heading);
-        printf("Target Heading: %f\n", target_heading);
         printf("PID: %f\n", PID);
+        printf("Left wheel speed: %f\n", left_wheel_speed);
+        printf("Right wheel speed: %f\n", right_wheel_speed);
+        printf("heading: %f\n", current_heading);
+        printf("target heading: %f\n", target_heading);
 
         // Calculate the new motor speeds
-        if (PID < 0.5)
+        if (PID > 0)
         {
             // Turn left
             float left_motor_speed = SPEED + PID;
@@ -206,7 +212,7 @@ bool pid_control()
 
             set_speed(left_motor_speed, right_motor_speed);
         }
-        else if (PID > 0.5)
+        else if (PID < 0)
         {
             // change pid to positive
             PID = fabs(PID);
@@ -217,26 +223,25 @@ bool pid_control()
         }
         else
         {
-            // stop motor
-            stop_motors();
+            // Maintain the same heading
+            set_speed(SPEED, SPEED);
         }
 
         float heading_difference = fabs(current_heading - target_heading);
-
-        if (heading_difference < 2.0)
+        if (heading_difference < 30.0)
         {
             stop_motors();
         }
-        return true;
 
+        return true;
     }
     else if (movement_direction == 'd')
     {
         // Get current heading
         current_heading = get_heading();
 
-        // Angle per step
-        float error = target_heading - current_heading;
+        // Calculate the error
+        float error = 0;
         float left_wheel_speed = left_encoder_speed;
         float right_wheel_speed = right_encoder_speed;
         float wheel_speed_error = left_wheel_speed - right_wheel_speed;
@@ -248,13 +253,14 @@ bool pid_control()
 
         float PID = P + I + D;
 
-        printf("Current Heading: %f\n", current_heading);
-        printf("Target Heading: %f\n", target_heading);
         printf("PID: %f\n", PID);
-
+        printf("Left wheel speed: %f\n", left_wheel_speed);
+        printf("Right wheel speed: %f\n", right_wheel_speed);
+        printf("heading: %f\n", current_heading);
+        printf("target heading: %f\n", target_heading);
 
         // Calculate the new motor speeds
-        if (PID > 0.5)
+        if (PID < 0)
         {
             // Turn left
             float left_motor_speed = SPEED + PID;
@@ -262,7 +268,7 @@ bool pid_control()
 
             set_speed(left_motor_speed, right_motor_speed);
         }
-        else if (PID < 0.5)
+        else if (PID > 0)
         {
             // change pid to positive
             PID = fabs(PID);
@@ -273,21 +279,18 @@ bool pid_control()
         }
         else
         {
-            // stop motor
+            // Maintain the same heading
             set_speed(SPEED, SPEED);
         }
 
         float heading_difference = fabs(current_heading - target_heading);
-
-        if (heading_difference < 2.0)
+        if (heading_difference < 30.0)
         {
             stop_motors();
         }
+
         return true;
     }
-=======
-
->>>>>>> parent of b095b9f (Some nodes)
     return true;
 }
 
@@ -310,7 +313,6 @@ void reset_values()
     start_heading = 0.0;
     current_heading = 0.0;
     target_heading = 0.0;
-    set_heading = 0.0;
 }
 
 void move_forward(float speed)
@@ -424,6 +426,7 @@ void stop_motors()
     pwm_set_enabled(pwm_gpio_to_slice_num(enable_pin_B), false);
 
     reset_values();
+
     // Reset the movement direction
     movement_direction = 'x';
 }
