@@ -45,7 +45,6 @@ float kd = 0.01; // Derivative gain
 float I = 0.0;   // Integral term
 float P = 0.0;   // Proportional term
 float D = 0.0;   // Derivative term
-float last_error = 0.0; // Last error
 
 #define SPEED 5000
 #endif // MOTOR_H
@@ -97,6 +96,11 @@ bool pid_control()
 
         float PID = P + I + D;
 
+        printf("PID: %f\n", PID);
+        printf("Left wheel speed: %f\n", left_wheel_speed);
+        printf("Right wheel speed: %f\n", right_wheel_speed);
+        printf("heading: %f\n", current_heading);
+
         // Calculate the new motor speeds
         if (PID > 0)
         {
@@ -141,6 +145,11 @@ bool pid_control()
 
         float PID = P + I + D;
 
+        printf("PID: %f\n", PID);
+        printf("Left wheel speed: %f\n", left_wheel_speed);
+        printf("Right wheel speed: %f\n", right_wheel_speed);
+        printf("heading: %f\n", current_heading);
+
         // Calculate the new motor speeds
         if (PID < 0)
         {
@@ -166,6 +175,7 @@ bool pid_control()
 
         return true;
     }
+<<<<<<< HEAD
     else if (movement_direction == 'a')
     {
         // Get current heading
@@ -275,6 +285,9 @@ bool pid_control()
         }
         return true;
     }
+=======
+
+>>>>>>> parent of b095b9f (Some nodes)
     return true;
 }
 
