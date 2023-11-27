@@ -21,10 +21,10 @@ uint8_t input_3 = 12;
 uint8_t input_4 = 11;
 
 // Function prototypes
-void move_forward(float speed);
-void move_backward(float speed);
-void turn_left(float speed, float angle);
-void turn_right(float speed, float angle);
+void move_forward(float left_motor_speed, float right_motor_speed);
+void move_backward(float left_motor_speed, float right_motor_speed);
+void turn_left(float left_motor_speed, float right_motor_speed, float angle);
+void turn_right(float left_motor_speed, float right_motor_speed, float angle);
 void stop_motors();
 void init_motors(uint8_t left_motor_pin1, uint8_t left_motor_pin2, uint8_t right_motor_pin1, uint8_t right_motor_pin2, uint8_t left_motor_pwm_pin, uint8_t right_motor_pwm_pin, uint8_t encoder_left_pin, uint8_t encoder_right_pin);
 
@@ -46,7 +46,8 @@ float I = 0.0;   // Integral term
 float P = 0.0;   // Proportional term
 float D = 0.0;   // Derivative term
 
-#define SPEED 6250
+#define SPEED_RIGHT 5625
+#define SPEED_LEFT 5000
 #endif // MOTOR_H
 
 void set_speed(float left_motor_speed, float right_motor_speed)
@@ -86,7 +87,7 @@ bool pid_control()
         current_heading = get_heading();
 
         // Calculate the error
-        float error = 0;
+        float error = target_heading - current_heading;
         float left_wheel_speed = left_encoder_speed;
         float right_wheel_speed = right_encoder_speed;
         float wheel_speed_error = left_wheel_speed - right_wheel_speed;
@@ -104,27 +105,27 @@ bool pid_control()
         printf("heading: %f\n", current_heading);
 
         // Calculate the new motor speeds
-        if (PID > 0)
+        if (PID > 1)
         {
             // Turn left
-            float left_motor_speed = SPEED + PID;
-            float right_motor_speed = SPEED;
+            float left_motor_speed = SPEED_LEFT + PID;
+            float right_motor_speed = SPEED_RIGHT;
 
             set_speed(left_motor_speed, right_motor_speed);
         }
-        else if (PID < 0)
+        else if (PID < -1)
         {
             // change pid to positive
             PID = fabs(PID);
-            float left_motor_speed = SPEED;
-            float right_motor_speed = SPEED + PID;
+            float left_motor_speed = SPEED_LEFT;
+            float right_motor_speed = SPEED_RIGHT + PID;
 
             set_speed(left_motor_speed, right_motor_speed);
         }
         else
         {
             // Maintain the same heading
-            set_speed(SPEED, SPEED);
+            set_speed(SPEED_LEFT, SPEED_RIGHT);
         }
 
         return true;
@@ -135,7 +136,7 @@ bool pid_control()
         current_heading = get_heading();
 
         // Calculate the error
-        float error = 0;
+        float error = target_heading - current_heading;
         float left_wheel_speed = left_encoder_speed;
         float right_wheel_speed = right_encoder_speed;
         float wheel_speed_error = left_wheel_speed - right_wheel_speed;
@@ -156,8 +157,8 @@ bool pid_control()
         if (PID < 0)
         {
             // Turn left
-            float left_motor_speed = SPEED + PID;
-            float right_motor_speed = SPEED;
+            float left_motor_speed = SPEED_LEFT + PID;
+            float right_motor_speed = SPEED_RIGHT;
 
             set_speed(left_motor_speed, right_motor_speed);
         }
@@ -165,15 +166,15 @@ bool pid_control()
         {
             // change pid to positive
             PID = fabs(PID);
-            float left_motor_speed = SPEED;
-            float right_motor_speed = SPEED + PID;
+            float left_motor_speed = SPEED_LEFT;
+            float right_motor_speed = SPEED_RIGHT + PID;
 
             set_speed(left_motor_speed, right_motor_speed);
         }
         else
         {
             // Maintain the same heading
-            set_speed(SPEED, SPEED);
+            set_speed(SPEED_LEFT, SPEED_RIGHT);
         }
 
         return true;
@@ -207,8 +208,8 @@ bool pid_control()
         if (PID > 0)
         {
             // Turn left
-            float left_motor_speed = SPEED + PID;
-            float right_motor_speed = SPEED;
+            float left_motor_speed = SPEED_LEFT + PID;
+            float right_motor_speed = SPEED_RIGHT;
 
             set_speed(left_motor_speed, right_motor_speed);
         }
@@ -216,15 +217,15 @@ bool pid_control()
         {
             // change pid to positive
             PID = fabs(PID);
-            float left_motor_speed = SPEED;
-            float right_motor_speed = SPEED + PID;
+            float left_motor_speed = SPEED_LEFT;
+            float right_motor_speed = SPEED_RIGHT + PID;
 
             set_speed(left_motor_speed, right_motor_speed);
         }
         else
         {
             // Maintain the same heading
-            set_speed(SPEED, SPEED);
+            set_speed(SPEED_LEFT, SPEED_RIGHT);
         }
 
         float heading_difference = fabs(current_heading - target_heading);
@@ -263,8 +264,8 @@ bool pid_control()
         if (PID < 0)
         {
             // Turn left
-            float left_motor_speed = SPEED + PID;
-            float right_motor_speed = SPEED;
+            float left_motor_speed = SPEED_LEFT + PID;
+            float right_motor_speed = SPEED_RIGHT;
 
             set_speed(left_motor_speed, right_motor_speed);
         }
@@ -272,15 +273,15 @@ bool pid_control()
         {
             // change pid to positive
             PID = fabs(PID);
-            float left_motor_speed = SPEED;
-            float right_motor_speed = SPEED + PID;
+            float left_motor_speed = SPEED_LEFT;
+            float right_motor_speed = SPEED_RIGHT + PID;
 
             set_speed(left_motor_speed, right_motor_speed);
         }
         else
         {
             // Maintain the same heading
-            set_speed(SPEED, SPEED);
+            set_speed(SPEED_LEFT, SPEED_RIGHT);
         }
 
         float heading_difference = fabs(current_heading - target_heading);
@@ -315,7 +316,7 @@ void reset_values()
     target_heading = 0.0;
 }
 
-void move_forward(float speed)
+void move_forward(float left_motor_speed, float right_motor_speed)
 {
     // Reset Values
     reset_values();
@@ -326,7 +327,7 @@ void move_forward(float speed)
     gpio_put(input_3, 1);
     gpio_put(input_4, 0);
 
-    set_speed(speed, speed);
+    set_speed(left_motor_speed, right_motor_speed);
 
     // Set the PWM channels
     pwm_set_enabled(pwm_gpio_to_slice_num(enable_pin_A), true);
@@ -338,7 +339,7 @@ void move_forward(float speed)
     movement_direction = 'w';
 }
 
-void move_backward(float speed)
+void move_backward(float left_motor_speed, float right_motor_speed)
 {
     // Reset Values
     reset_values();
@@ -349,7 +350,7 @@ void move_backward(float speed)
     gpio_put(input_3, 0);
     gpio_put(input_4, 1);
 
-    set_speed(speed, speed);
+    set_speed(left_motor_speed, right_motor_speed);
 
     pwm_set_enabled(pwm_gpio_to_slice_num(enable_pin_A), true);
     pwm_set_enabled(pwm_gpio_to_slice_num(enable_pin_B), true);
@@ -360,7 +361,7 @@ void move_backward(float speed)
     movement_direction = 's';
 }
 
-void turn_left(float speed, float angle)
+void turn_left(float left_motor_speed, float right_motor_speed, float angle)
 {
     // Reset Values
     reset_values();
@@ -371,7 +372,7 @@ void turn_left(float speed, float angle)
     gpio_put(input_3, 1);
     gpio_put(input_4, 0);
 
-    set_speed(speed, speed);
+    set_speed(left_motor_speed, right_motor_speed);
 
     // Set the PWM channels
     pwm_set_enabled(pwm_gpio_to_slice_num(enable_pin_A), true);
@@ -384,7 +385,7 @@ void turn_left(float speed, float angle)
     movement_direction = 'a';
 }
 
-void turn_right(float speed, float angle)
+void turn_right(float left_motor_speed, float right_motor_speed, float angle)
 {
     // Reset Values
     reset_values();
@@ -395,7 +396,7 @@ void turn_right(float speed, float angle)
     gpio_put(input_3, 0);
     gpio_put(input_4, 1);
 
-    set_speed(speed, speed);
+    set_speed(left_motor_speed, right_motor_speed);
 
     // Set the PWM channels
     pwm_set_enabled(pwm_gpio_to_slice_num(enable_pin_A), true);

@@ -59,22 +59,22 @@ void motor_control(char *recv_buffer)
     if (recv_buffer[0] == MOVE_FORWARD[0])
     {
         printf("Moving forward\n");
-        move_forward(6250); 
+        move_forward(5000, 5625); 
     }
     else if (recv_buffer[0] == MOVE_BACKWARD[0])
     {
         printf("Moving backward\n");
-        move_backward(6250);
+        move_backward(5000, 5625);
     }
     else if (recv_buffer[0] == TURN_LEFT[0])
     {
         printf("Turning left\n");
-        turn_left(6250, 90);
+        turn_left(5000, 5625, 90);
     }
     else if (recv_buffer[0] == TURN_RIGHT[0])
     {
         printf("Turning right\n");
-        turn_right(6250, 90);
+        turn_right(5000, 5625, 90);
     }
     else if (recv_buffer[0] == STOP[0])
     {
@@ -159,7 +159,7 @@ void interrupt_handler(uint gpio, uint32_t events)
 
         // Disable the interrupt for 100ms to prevent multiple interrupts from being triggered
         gpio_set_irq_enabled_with_callback(LEFT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
-        add_repeating_timer_ms(200, reset_left_infrared_cool_down, NULL, &left_infrared_cool_down_timer);
+        add_repeating_timer_ms(5, reset_left_infrared_cool_down, NULL, &left_infrared_cool_down_timer);
     }
 
     if (gpio == RIGHT_LINE_SENSOR_PIN)
@@ -175,7 +175,7 @@ void interrupt_handler(uint gpio, uint32_t events)
 
         // Disable the interrupt for 100ms to prevent multiple interrupts from being triggered
         gpio_set_irq_enabled_with_callback(RIGHT_LINE_SENSOR_PIN, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false, &interrupt_handler);
-        add_repeating_timer_ms(200, reset_right_infrared_cool_down, NULL, &right_infrared_cool_down_timer);
+        add_repeating_timer_ms(5, reset_right_infrared_cool_down, NULL, &right_infrared_cool_down_timer);
     }
 
     if (gpio == BARCODE_SENSOR_PIN)
@@ -190,6 +190,22 @@ void interrupt_handler(uint gpio, uint32_t events)
     {
         printf("Both line sensors triggered\n");
         stop_motors();
+        left_line_tiggered = false;
+        right_line_tiggered = false;
+    } else if (left_line_tiggered && !right_line_tiggered)
+    {
+        // Tilt Left
+        set_speed(5325, 5625);
+        left_line_tiggered = false;
+    } else if (!left_line_tiggered && right_line_tiggered)
+    {
+        // Tilt Right
+        set_speed(5000, 5925);
+        right_line_tiggered = false;
+    } else if (!left_line_tiggered && !right_line_tiggered)
+    {
+        // Move forward
+        set_speed(5000, 5625);
     }
 }
 
@@ -256,7 +272,7 @@ int main()
     add_repeating_timer_ms(-500, check_wifi_status, NULL, &check_wifi);
 
     struct repeating_timer pid_timer;
-    add_repeating_timer_ms(50, pid_control, NULL, &pid_timer);
+    add_repeating_timer_ms(30, pid_control, NULL, &pid_timer);
 
     while (1)
     {
