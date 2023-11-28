@@ -47,7 +47,7 @@ float P = 0.0;   // Proportional term
 float D = 0.0;   // Derivative term
 
 #define SPEED_RIGHT 5625
-#define SPEED_LEFT 5000
+#define SPEED_LEFT 5625
 #endif // MOTOR_H
 
 void set_speed(float left_motor_speed, float right_motor_speed)
@@ -229,7 +229,7 @@ bool pid_control()
         }
 
         float heading_difference = fabs(current_heading - target_heading);
-        if (heading_difference < 30.0)
+        if (heading_difference < 20.0)
         {
             stop_motors();
         }
@@ -285,7 +285,7 @@ bool pid_control()
         }
 
         float heading_difference = fabs(current_heading - target_heading);
-        if (heading_difference < 30.0)
+        if (heading_difference < 20.0)
         {
             stop_motors();
         }
