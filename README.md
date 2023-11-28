@@ -33,7 +33,14 @@ The directory of this project is split into the deliverables for Week 10, 13 and
 ![block_diagram](./team42-blockdiagram.png)
 
 ## Flowchart:
-![flowchart](./embedded_flowchart.png)
+### Ultrasonic and Wifi
+![flowchart_1](./embedded_flowchart_1.png)
+### Client and PID
+![flowchart_2](./embedded_flowchart_2.png)
+### Motor and Encoder
+![flowchart_3](./embedded_flowchart_3.png)
+### Magnetometer and IR Sensor
+![flowchart_4](./embedded_flowchart_4.png)
 
 ## Data Flow Diagram:
 ![Data flow](./embedded_dataflow.png)
